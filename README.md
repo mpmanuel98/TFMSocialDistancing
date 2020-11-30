@@ -1,4 +1,4 @@
-# Bachelor's Master Final Project
+# Master's Degree Final Project
 
 [ES] Control de asistencia y distancia social automatizado mediante reconocimiento de imágenes.
 
