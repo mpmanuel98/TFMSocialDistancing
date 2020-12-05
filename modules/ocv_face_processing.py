@@ -57,9 +57,9 @@ def detect_frontal_faces(img):
         return None
 
     faces = []
-    face_info = dict()
 
     for face in faces_detected:
+        face_info = dict()
         x, y, w, h = face
 
         cropped_scaled_face = cv2.resize(gray[y:y+h, x:x+w], (200, 200))

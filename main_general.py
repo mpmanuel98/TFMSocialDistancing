@@ -23,7 +23,7 @@ import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
 
 # define the minimum safe distance (in pixels) that two people can be from each other
-MIN_DISTANCE = 100
+MIN_DISTANCE = 300
 
 """
 Script
@@ -43,29 +43,31 @@ while True:
 
     centroids = []
     for face in faces:
-        cv2.imshow("Image Cropped:", face.get("face_cropped"))
-
         x, y, w, h = face.get("coords")
+
+        # compute and save the centroids of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
         centroids.append(centroid)
+
+        # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=10)
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
-    D = dist.cdist(centroids, centroids, metric="euclidean")
+    dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
 
-    violate = set()
-    # loop over the upper triangular of the distance matrix
-    for i in range(0, D.shape[0]):
-        for j in range(i + 1, D.shape[1]):
-            # check to see if the distance between any two
-            # centroid pairs is less than the configured number
-            # of pixels
-            if D[i, j] < MIN_DISTANCE:
-                # update our violation set with the indexes of
-                # the centroid pairs
-                violate.add(i)
-                violate.add(j)
+    violates = dict()
 
+    for i in range(0, dist_comp.shape[0]):
+        relations = []
+        for j in range(0, dist_comp.shape[1]):
+            # check if the distance between two centroid pairs is less than the threshold
+            print(dist_comp[i, j])
+            if dist_comp[i, j] < MIN_DISTANCE and i != j:
+                relations.append(j)
+        
+        violates[i] = relations
+
+    print(violates)
     cv2.imshow("Image Delimited:", image)
     cv2.waitKey(1)
 
