@@ -8,7 +8,7 @@ a specified algorithm. For all the face processes OpenCV algorithms
 are used.
 
 Also some functions are defined:
-    detect_faces(img)
+    detect_frontal_faces(img)
     create_recognition_structures(training_images_path)
 """
 
@@ -25,7 +25,7 @@ Definitions (functions)
 ----------
 """
 
-def detect_faces(img):
+def detect_frontal_faces(img):
     """Detects faces in a given image.
 
     Parameters
@@ -51,25 +51,25 @@ def detect_faces(img):
     # Haar Classifier
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
 
-    faces_detected = face_cascade.detectMultiScale(gray, scaleFactor=1.2)
+    faces_detected = face_cascade.detectMultiScale(gray, scaleFactor=1.1)
 
     if (len(faces_detected) == 0):
         return None
 
-    faces_info = []
+    faces = []
+    face_info = dict()
 
     for face in faces_detected:
-
         x, y, w, h = face
 
         cropped_scaled_face = cv2.resize(gray[y:y+h, x:x+w], (200, 200))
 
-        cv2.imshow("Detected face:", cropped_scaled_face)
-        cv2.waitKey(300)
+        face_info["face_cropped"] = cropped_scaled_face
+        face_info["coords"] = face
 
-        faces_info.append(cropped_scaled_face)
+        faces.append(face_info)
 
-    return faces_info
+    return faces
 
 def create_recognition_structures(training_images_path):
     """Creates the structures necessary to make the subsequent
@@ -112,14 +112,14 @@ def create_recognition_structures(training_images_path):
 
             image_path = subject_dir_path + "/" + image_name
             image = cv2.imread(image_path)
-            detected_faces = detect_faces(image)
+            detected_faces = detect_frontal_faces(image)
 
             if detected_faces is None:
                 continue
-            else:
-                for face in detected_faces:
-                    faces.append(face)
-                    labels.append(subject_index)
+
+            for face in detected_faces:
+                faces.append(face.get("face_cropped"))
+                labels.append(subject_index)
 
         subject_index += 1            
 
@@ -205,7 +205,7 @@ class Recognizer:
             recognized.
         """
 
-        face_list = detect_faces(img)
+        face_list = detect_frontal_faces(img)
 
         if face_list is None:
             return None
@@ -214,7 +214,7 @@ class Recognizer:
 
         for face in face_list:
 
-            info_recognizer = self.recognizer.predict(face)
+            info_recognizer = self.recognizer.predict(face.get("face_cropped"))
 
             person = []
             label_text = self.names.get(info_recognizer[0])

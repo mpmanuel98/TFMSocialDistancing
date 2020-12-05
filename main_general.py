@@ -1,108 +1,72 @@
 """
 Script main_general.py.
 
-This script controls automatically the illumination of the smart home.
-If a person enters in a room and the cameras detect movement, the room
-is illuminated and a timer starts. If the timer finish and nobody has
-been detected, the illumination turns off. In the other hand if someone
-is detected, the timer refreshs and continues trying to detect someone.
+Description
 
 Also a function is defined:
-    wait_for_detection(wait_time)
+    function(variable)
 """
 
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
 import time
+import io
+
+from scipy.spatial import distance as dist
+import cv2
+import numpy as np
+from PIL import Image
 
 import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
-import modules.spacelynk_server as SPL
+import modules.ocv_face_processing as OFP
+
+# define the minimum safe distance (in pixels) that two people can be from each other
+MIN_DISTANCE = 100
 
 """
 Script
 ----------
 """
 
-if(args.room_to_control == "bedroom"):
-    while True:
-        room_motion_alarm = FWC.get_motion_detection_alarm(FWC.url_bedroom)
-        print(room_motion_alarm)
-        if(room_motion_alarm == 2):
-            if(SPL.get_rain_status() == True):
-                if(SPL.get_bedroom_lights_status() == False):
-                    SPL.bedroom_lights_on()
-                    wait_for_detection(300, FWC.url_bedroom)
-            else:
-                print(SPL.get_radiation_level())
-                if(SPL.get_radiation_level() < 1700):
-                    if(SPL.get_bedroom_lights_status() == False):
-                        SPL.bedroom_lights_on()
-                        wait_for_detection(300, FWC.url_bedroom)
-                else:
-                    if(SPL.get_bedroom_blind_status() > 75):
-                        SPL.bedroom_blind_up()
-                        wait_for_detection(300, FWC.url_bedroom)
-        else:
-            if(SPL.get_bedroom_lights_status() == True):
-                SPL.bedroom_lights_off()
-                time.sleep(5)
-            if(SPL.get_bedroom_blind_status() < 25):
-                SPL.bedroom_blind_down()
-                time.sleep(10)
+while True:
+    img = FWC.take_capture(FWC.url_home_tests)
 
-elif(args.room_to_control == "kitchen"):
-    while True:
-        room_motion_alarm = FWC.get_motion_detection_alarm(FWC.url_kitchen)
-        print(room_motion_alarm)
-        if(room_motion_alarm == 2):
-            if(SPL.get_rain_status() == True):
-                if(SPL.get_kitchen_lights_status() == False):
-                    SPL.kitchen_lights_on()
-                    wait_for_detection(300, FWC.url_kitchen)
-            else:
-                print(SPL.get_radiation_level())
-                if(SPL.get_radiation_level() < 1700):
-                    if(SPL.get_kitchen_lights_status() == False):
-                        SPL.kitchen_lights_on()
-                        wait_for_detection(300, FWC.url_kitchen)
-                else:
-                    if(SPL.get_kitchen_blind_status() > 75):
-                        SPL.kitchen_blind_up()
-                        wait_for_detection(300, FWC.url_kitchen)
-        else:
-            if(SPL.get_kitchen_lights_status() == True):
-                SPL.kitchen_lights_off()
-                time.sleep(5)
-            if(SPL.get_kitchen_blind_status() < 25):
-                SPL.kitchen_blind_down()
-                time.sleep(10)
-elif(args.room_to_control == "livroom"):
-    while True:
-        room_motion_alarm = FWC.get_motion_detection_alarm(FWC.url_living_room)
-        print(room_motion_alarm)
-        if(room_motion_alarm == 2):
-            if(SPL.get_rain_status() == True):
-                if(SPL.get_livroom_lights_status() == False):
-                    SPL.livroom_lights_on()
-                    wait_for_detection(300, FWC.url_livroom)
-            else:
-                print(SPL.get_radiation_level())
-                if(SPL.get_radiation_level() < 1700):
-                    if(SPL.get_livroom_lights_status() == False):
-                        SPL.livroom_lights_on()
-                        wait_for_detection(300, FWC.url_living_room)
-                else:
-                    if(SPL.get_livroom_curtain_status() > 75):
-                        SPL.livroom_curtain_up()
-                        wait_for_detection(300, FWC.url_living_room)
-        else:
-            if(SPL.get_livroom_lights_status() == True):
-                SPL.livroom_lights_off()
-                time.sleep(5)
-            if(SPL.get_livroom_curtain_status() < 25):
-                SPL.livroom_curtain_down()
-                time.sleep(10)
-else:
-    exit()
+    pil_image = Image.open(io.BytesIO(img))
+    image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+    faces = OFP.detect_frontal_faces(image)
+
+    if faces is None:
+        continue
+
+    centroids = []
+    for face in faces:
+        cv2.imshow("Image Cropped:", face.get("face_cropped"))
+
+        x, y, w, h = face.get("coords")
+        centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
+        centroids.append(centroid)
+        cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=10)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    D = dist.cdist(centroids, centroids, metric="euclidean")
+
+    violate = set()
+    # loop over the upper triangular of the distance matrix
+    for i in range(0, D.shape[0]):
+        for j in range(i + 1, D.shape[1]):
+            # check to see if the distance between any two
+            # centroid pairs is less than the configured number
+            # of pixels
+            if D[i, j] < MIN_DISTANCE:
+                # update our violation set with the indexes of
+                # the centroid pairs
+                violate.add(i)
+                violate.add(j)
+
+    cv2.imshow("Image Delimited:", image)
+    cv2.waitKey(1)
+
+    time.sleep(1)
