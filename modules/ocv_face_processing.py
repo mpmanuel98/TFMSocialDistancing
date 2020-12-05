@@ -39,11 +39,8 @@ def detect_frontal_faces(img):
         List of cropped and scaled images with the region of the
         detected faces.
     """
-
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
     # Ecualizacion del histograma (para suavizar los cambios de iluminacion)
-    # equ = cv2.equalizeHist(gray)
+    # equ = cv2.equalizeHist(img)
 
     # Aplicando filtro bilatreal para realizar un suavizado de la imagen
     #blur = cv2.bilateralFilter(equ,9,75,75)
@@ -51,7 +48,7 @@ def detect_frontal_faces(img):
     # Haar Classifier
     face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
 
-    faces_detected = face_cascade.detectMultiScale(gray, scaleFactor=1.1)
+    faces_detected = face_cascade.detectMultiScale(img, scaleFactor=1.1)
 
     if (len(faces_detected) == 0):
         return None
@@ -62,7 +59,7 @@ def detect_frontal_faces(img):
         face_info = dict()
         x, y, w, h = face
 
-        cropped_scaled_face = cv2.resize(gray[y:y+h, x:x+w], (200, 200))
+        cropped_scaled_face = cv2.resize(img[y:y+h, x:x+w], (200, 200))
 
         face_info["face_cropped"] = cropped_scaled_face
         face_info["coords"] = face
