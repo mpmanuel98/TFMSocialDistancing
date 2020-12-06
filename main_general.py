@@ -30,12 +30,16 @@ MIN_DISTANCE = 1500
 # define the relation between pixels and cms (pixels, cms)
 RELATION = (30, 3)
 
+#str(time.strftime("%d_%m_%Y-%H.%M.%S"))
+filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
+violations_reg = open(filename, "w")
+
 """
 Script
 ----------
 """
 
-while True:
+for iteration in range(1,10):
     img = FWC.take_capture(FWC.url_home_tests)
     pil_image = Image.open(io.BytesIO(img))
     image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
@@ -69,7 +73,7 @@ while True:
     # compute the euclidean distance between the centroids
     dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
 
-    violates = dict()
+    violations = dict()
     for i in range(0, dist_comp.shape[0]):
         relations = []
         for j in range(0, dist_comp.shape[1]):
@@ -81,10 +85,10 @@ while True:
         if len(relations) == 0:
             continue
 
-        violates[centroids[i]] = relations
+        violations[centroids[i]] = relations
 
-    num_violates = 0
-    for key, value in violates.items():
+    num_violations = 0
+    for key, value in violations.items():
         for rel_tuple in value:
 
             cv2.line(image, key, rel_tuple[0],
@@ -98,9 +102,13 @@ while True:
             cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint,
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            num_violates += 1
+            line_reg = str(key) + " con " + str(rel_tuple[0]) + " a las " + str(time.strftime("%H.%M.%S")) + " a una distancia aproximada de: " + str(round(real_distance, 2)) + " cms\n"
+            violations_reg.write(line_reg)
 
-    text = "Violaciones de la Distancia de Seguridad: " + str(num_violates / 2)
+
+            num_violations += 1
+
+    text = "Violaciones de la Distancia de Seguridad: " + str(num_violations / 2)
     cv2.putText(image, text, (10, image.shape[0] - 25),
                 cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
@@ -108,3 +116,5 @@ while True:
     cv2.waitKey(1)
 
     time.sleep(2)
+
+violations_reg.close()
