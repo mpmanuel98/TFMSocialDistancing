@@ -28,7 +28,7 @@ import modules.ocv_face_processing as OFP
 MIN_DISTANCE = 1500
 
 # define the relation between pixels and cms (pixels, cms)
-RELATION = (30,3)
+RELATION = (30, 3)
 
 """
 Script
@@ -40,7 +40,7 @@ while True:
     pil_image = Image.open(io.BytesIO(img))
     image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
-    faces = OFP.detect_frontal_faces(image)
+    faces = OFP.detect_faces(image)
 
     if faces is None:
         continue
@@ -48,7 +48,7 @@ while True:
     centroids = []
     #face_index = 0
     for face in faces:
-        x, y, w, h = face.get("coords")
+        x, y, w, h = face
 
         # save the cropped face in the corresponding directory
         """
@@ -68,35 +68,43 @@ while True:
 
     # compute the euclidean distance between the centroids
     dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
-
+    print(dist_comp)
     violates = dict()
     for i in range(0, dist_comp.shape[0]):
         relations = []
-        for j in range(i+1, dist_comp.shape[1]):
+        for j in range(0, dist_comp.shape[1]):
 
             # check if the distance between two centroid pairs is less than the threshold
-            if dist_comp[i, j] < MIN_DISTANCE:
+            if (dist_comp[i, j] < MIN_DISTANCE) and (dist_comp[i, j] > 0):
                 relations.append((centroids[j], dist_comp[i, j]))
+
+        print(relations)
 
         if len(relations) == 0:
             continue
 
         violates[centroids[i]] = relations
 
+    num_violates = 0
     for key, value in violates.items():
-        cv2.line(image, key, value[0][0], (0, 255, 0), thickness=2, lineType=8)
+        for rel_tuple in value:
 
-        midPoint = (int ((key[0] + value[0][0][0]) / 2), int ((key[1] + value[0][0][1]) /2))
+            cv2.line(image, key, rel_tuple[0],
+                     (0, 255, 0), thickness=2, lineType=8)
 
-        real_distance = value[0][1] * RELATION[1] / RELATION[0]
+            midPoint = (int((key[0] + rel_tuple[0][0]) / 2),
+                        int((key[1] + rel_tuple[0][1]) / 2))
 
-        cv2.putText(image, str(real_distance), midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+            real_distance = rel_tuple[1] * RELATION[1] / RELATION[0]
 
-    """
-    text = "Violaciones de la Distancia Social: " + str(len(violates))
+            cv2.putText(image, str(real_distance), midPoint,
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 0), 1)
+
+            num_violates += 1
+
+    text = "Violaciones de la Distancia Social: " + str(num_violates / 2)
     cv2.putText(image, text, (10, image.shape[0] - 25),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 2)
-    """
 
     cv2.imshow("Image:", image)
     cv2.waitKey(1)

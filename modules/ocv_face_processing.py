@@ -25,7 +25,7 @@ Definitions (functions)
 ----------
 """
 
-def detect_frontal_faces(img):
+def detect_faces(image):
     """Detects faces in a given image.
 
     Parameters
@@ -46,27 +46,41 @@ def detect_frontal_faces(img):
     #blur = cv2.bilateralFilter(equ,9,75,75)
 
     # Haar Classifier
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
+    haar_frontalface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
+    haar_profileface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_profileface.xml")
 
-    faces_detected = face_cascade.detectMultiScale(img, scaleFactor=1.1)
+    frontal_faces = haar_frontalface.detectMultiScale(image, scaleFactor=1.06, minNeighbors=5)
+    profile_faces = haar_profileface.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5)
 
-    if (len(faces_detected) == 0):
+    if (len(frontal_faces) == 0) and (len(profile_faces) == 0):
         return None
 
-    faces = []
+    faces_detected = []
+    faces_aux = []
+        
+    if (len(frontal_faces) != 0) and (len(profile_faces) == 0):
+        for face in frontal_faces:
+            x, y, w, h = face
+            faces_aux.append([x, y, w, h])
 
-    for face in faces_detected:
-        face_info = dict()
-        x, y, w, h = face
+    if (len(frontal_faces) == 0) and (len(profile_faces) != 0):
+        for face in profile_faces:
+            x, y, w, h = face
+            faces_aux.append([x, y, w, h])
 
-        cropped_scaled_face = cv2.resize(img[y:y+h, x:x+w], (200, 200))
+    if (len(frontal_faces) != 0) and (len(profile_faces) != 0):
+        for face in frontal_faces:
+            x, y, w, h = face
+            faces_aux.append([x, y, w, h])
 
-        face_info["face_cropped"] = cropped_scaled_face
-        face_info["coords"] = face
+        for face in profile_faces:
+            x, y, w, h = face
+            faces_aux.append([x, y, w, h])
 
-        faces.append(face_info)
+    faces_aux.extend(faces_aux)
+    faces_detected, weights = cv2.groupRectangles(np.array(faces_aux).tolist(), 1, 0.50)
 
-    return faces
+    return faces_detected
 
 def create_recognition_structures(training_images_path):
     """Creates the structures necessary to make the subsequent
