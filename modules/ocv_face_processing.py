@@ -49,8 +49,8 @@ def detect_faces(image):
     haar_frontalface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
     haar_profileface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_profileface.xml")
 
-    frontal_faces = haar_frontalface.detectMultiScale(image, scaleFactor=1.06, minNeighbors=5)
-    profile_faces = haar_profileface.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5)
+    frontal_faces = haar_frontalface.detectMultiScale(image, scaleFactor=1.06, minNeighbors=5, minSize=(250,250))
+    profile_faces = haar_profileface.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5, minSize=(250,250))
 
     if (len(frontal_faces) == 0) and (len(profile_faces) == 0):
         return None
