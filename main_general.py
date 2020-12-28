@@ -25,13 +25,30 @@ import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
 
 # define the camera to use
-CAMERA = "hikvision"
+# 1.- hikvision
+# 2.- foscam
+CAMERA = "foscam"
 
-# define the minimum safe distance (in pixels) that two people can be from each other
-MIN_DISTANCE = 1500
+if(CAMERA == "foscam"):
+    # define the minimum safe distance (in pixels) that two people can be from each other
+    MIN_DISTANCE = 1500
 
-# define the relation between pixels and cms (pixels, cms)
-RELATION = (30, 3)
+    # define the relation between pixels and cms (pixels, cms)
+    RELATION = (16, 3)
+
+    # define the minimum size in pixels that a face size must be
+    min_size = 50
+elif(CAMERA == "hikvision"):
+    # define the minimum safe distance (in pixels) that two people can be from each other
+    MIN_DISTANCE = 1500
+
+    # define the relation between pixels and cms (pixels, cms)
+    RELATION = (36, 3)
+
+    # define the minimum size in pixels that a face size must be
+    min_size = 50
+else:
+    exit()
 
 #str(time.strftime("%d_%m_%Y-%H.%M.%S"))
 filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
@@ -45,7 +62,7 @@ Script
 for iteration in range(1,10):
 
     if(CAMERA == "foscam"):
-        img = FWC.take_capture(FWC.url_home_tests)
+        img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
         pil_image = Image.open(io.BytesIO(img))
         image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
     elif(CAMERA == "hikvision"):
@@ -55,7 +72,7 @@ for iteration in range(1,10):
     else:
         exit()
 
-    faces = OFP.detect_faces(image)
+    faces = OFP.detect_faces(image, min_size)
 
     if faces is None:
         continue
@@ -123,10 +140,11 @@ for iteration in range(1,10):
     cv2.putText(image, text, (10, image.shape[0] - 25),
                 cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
+    name = "iteracion_" + str(iteration) + ".png"
+    cv2.imwrite(name,image)
     
     image = cv2.resize(image, (1920, 1080)) 
     cv2.imshow("Image:", image)
     cv2.waitKey(1)
-
 
 violations_reg.close()

@@ -25,7 +25,7 @@ Definitions (functions)
 ----------
 """
 
-def detect_faces(image):
+def detect_faces(image, min_size):
     """Detects faces in a given image.
 
     Parameters
@@ -46,11 +46,17 @@ def detect_faces(image):
     #blur = cv2.bilateralFilter(equ,9,75,75)
 
     # Haar Classifier
-    haar_frontalface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_alt.xml")
+    """
+    haarcascade_frontalface_default.xml
+    haarcascade_frontalface_alt.xm
+    haarcascade_frontalface_alt2.xml
+    haarcascade_frontalface_alt_tree.xml
+    """
+    haar_frontalface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
     haar_profileface = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_profileface.xml")
 
-    frontal_faces = haar_frontalface.detectMultiScale(image, scaleFactor=1.06, minNeighbors=5, minSize=(250,250))
-    profile_faces = haar_profileface.detectMultiScale(image, scaleFactor=1.1, minNeighbors=5, minSize=(250,250))
+    frontal_faces = haar_frontalface.detectMultiScale(image, scaleFactor=1.3, minNeighbors=5, minSize=(min_size,min_size))
+    profile_faces = haar_profileface.detectMultiScale(image, scaleFactor=1.3, minNeighbors=5, minSize=(min_size,min_size))
 
     if (len(frontal_faces) == 0) and (len(profile_faces) == 0):
         return None
