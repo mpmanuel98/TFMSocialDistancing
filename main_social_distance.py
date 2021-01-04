@@ -1,5 +1,5 @@
 """
-Script main_general.py.
+Script main_social_distance.py.
 
 Description
 
@@ -23,6 +23,11 @@ from PIL import Image
 import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
+
+"""
+Parameters
+----------
+"""
 
 # define the camera to use
 # 1.- hikvision

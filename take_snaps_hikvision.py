@@ -24,8 +24,6 @@ import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
 
-# rtsp://admin:AmgCam18*@192.168.1.51:554/Streaming/Channels/101
-
 cap = cv2.VideoCapture()
 cap.open("rtsp://admin:AmgCam18*@192.168.1.51:554/Streaming/Channels/1")
 
