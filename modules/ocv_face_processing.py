@@ -16,7 +16,7 @@ __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
 import os
-
+import time
 import cv2
 import numpy as np
 
@@ -129,13 +129,20 @@ def create_recognition_structures(training_images_path):
 
             image_path = subject_dir_path + "/" + image_name
             image = cv2.imread(image_path)
-            detected_faces = detect_frontal_faces(image)
+            image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+            detected_faces = detect_faces(image_gray, 150)
 
             if detected_faces is None:
+                print("No face here")
                 continue
 
             for face in detected_faces:
-                faces.append(face.get("face_cropped"))
+                x, y, w, h = face
+                face_cropped = image_gray[y:y+h, x:x+w]
+                face_resized = cv2.resize(face_cropped, (200, 200))
+
+                faces.append(face_resized)
                 labels.append(subject_index)
 
         subject_index += 1            
@@ -204,7 +211,7 @@ class Recognizer:
         else:
             self.recognizer = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
             
-        self.recognizer.train(faces, np.array(labels))   
+        self.recognizer.train(faces, np.array(labels))
 
     def predict(self, img):
         """Tries to recognize a person in the given image.
@@ -222,7 +229,7 @@ class Recognizer:
             recognized.
         """
 
-        face_list = detect_frontal_faces(img)
+        face_list = detect_faces(img, 150)
 
         if face_list is None:
             return None
@@ -230,8 +237,11 @@ class Recognizer:
         people_identified = []
 
         for face in face_list:
+            x, y, w, h = face
+            face_cropped = img[y:y+h, x:x+w]
+            face_resized = cv2.resize(face_cropped, (200, 200))
 
-            info_recognizer = self.recognizer.predict(face.get("face_cropped"))
+            info_recognizer = self.recognizer.predict(face_resized)
 
             person = []
             label_text = self.names.get(info_recognizer[0])

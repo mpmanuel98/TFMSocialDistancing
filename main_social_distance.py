@@ -32,7 +32,7 @@ Parameters
 # define the camera to use
 # 1.- hikvision
 # 2.- foscam
-CAMERA = "foscam"
+CAMERA = "hikvision"
 
 if(CAMERA == "foscam"):
     # define the minimum safe distance (in pixels) that two people can be from each other
@@ -51,18 +51,18 @@ elif(CAMERA == "hikvision"):
     RELATION = (36, 3)
 
     # define the minimum size in pixels that a face size must be
-    min_size = 50
+    min_size = 200
 else:
     exit()
-
-#str(time.strftime("%d_%m_%Y-%H.%M.%S"))
-filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
-violations_reg = open(filename, "w")
 
 """
 Script
 ----------
 """
+
+#str(time.strftime("%d_%m_%Y-%H.%M.%S"))
+filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
+violations_reg = open(filename, "w")
 
 for iteration in range(1,10):
 
@@ -86,12 +86,6 @@ for iteration in range(1,10):
     #face_index = 0
     for face in faces:
         x, y, w, h = face
-
-        # save the cropped face in the corresponding directory
-        """
-        filename = time.strftime("%d_%m_%Y-%H.%M.%S") + ".jpg"
-        cv2.imwrite(str(face_index) + "/" + filename, face.get("face_cropped"))
-        """
 
         # compute and store the centroids of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
