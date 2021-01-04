@@ -60,16 +60,16 @@ Script
 ----------
 """
 
-#str(time.strftime("%d_%m_%Y-%H.%M.%S"))
+# str(time.strftime("%d_%m_%Y-%H.%M.%S"))
 filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
 violations_reg = open(filename, "w")
 
-for iteration in range(1,10):
+for iteration in range(1, 10):
 
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
         pil_image = Image.open(io.BytesIO(img))
-        image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        image = np.array(pil_image)
     elif(CAMERA == "hikvision"):
         cap = cv2.VideoCapture()
         cap.open("rtsp://admin:AmgCam18*@192.168.1.51:554/Streaming/Channels/1")
@@ -132,17 +132,17 @@ for iteration in range(1,10):
             line_reg = str(key) + " con " + str(rel_tuple[0]) + " a las " + str(time.strftime("%H.%M.%S")) + " a una distancia aproximada de: " + str(round(real_distance, 2)) + " cms\n"
             violations_reg.write(line_reg)
 
-
             num_violations += 1
 
-    text = "Violaciones de la Distancia de Seguridad: " + str(num_violations / 2)
+    text = "Violaciones de la Distancia de Seguridad: " + \
+        str(num_violations / 2)
     cv2.putText(image, text, (10, image.shape[0] - 25),
                 cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
     name = "iteracion_" + str(iteration) + ".png"
-    cv2.imwrite(name,image)
-    
-    image = cv2.resize(image, (1920, 1080)) 
+    cv2.imwrite(name, image)
+
+    image = cv2.resize(image, (1920, 1080))
     cv2.imshow("Image:", image)
     cv2.waitKey(1)
 
