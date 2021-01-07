@@ -49,8 +49,9 @@ print("Pre-processing finished!")
 #str(time.strftime("%d_%m_%Y-%H.%M.%S"))
 filename = "Asistencia el " + str(time.strftime("%d_%m_%Y")) + ".txt"
 attendance_reg = open(filename, "w")
+people_control = []
 
-for iteration in range(1,5):
+for iteration in range(1,20):
 
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
@@ -71,11 +72,16 @@ for iteration in range(1,5):
         print("No people detected.")
     else:
         for person in people:
-            print(person[0], person[1])
-            if(person[1] < 1000.0):
+            if(person[0] in people_control):
+                print("Person already recognized.")
+                continue
+            else:
+                people_control.append(person[0])
+
+            if(person[1] < 2000.0):
+                print(person[0], "recognized.")
                 line_reg = person[0] + "\n"
                 attendance_reg.write(line_reg)
 
-    attendance_reg.write("_________________________________")
-    # wait 30 minutes
-    time.sleep(1800)
+    # wait 10 minutes (600)
+    time.sleep(1)
