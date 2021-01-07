@@ -40,8 +40,6 @@ Script
 print("Starting pre-processing...")
 
 faces, labels, subject_names = OFP.create_recognition_structures("training_images")
-print(len(faces))
-print(len(labels))
 recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
 print("Pre-processing finished!")
@@ -78,7 +76,7 @@ for iteration in range(1,20):
             else:
                 people_control.append(person[0])
 
-            if(person[1] < 2000.0):
+            if(person[1] < 5000.0):
                 print(person[0], "recognized.")
                 line_reg = person[0] + "\n"
                 attendance_reg.write(line_reg)

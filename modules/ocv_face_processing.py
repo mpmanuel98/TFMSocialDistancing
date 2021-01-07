@@ -117,7 +117,9 @@ def create_recognition_structures(training_images_path):
     directories = os.listdir(training_images_path)
 
     for dir_name in directories:
-
+        if(dir_name == "cropped_temp_faces" or dir_name == "backup"):
+            continue
+        
         subject_names[subject_index] = dir_name
 
         subject_dir_path = training_images_path + "/" + dir_name
