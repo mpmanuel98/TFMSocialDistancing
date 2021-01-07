@@ -116,3 +116,5 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
         os.remove("training_images/cropped_temp_faces/" + image_name)
     else:
         shutil.move("training_images/cropped_temp_faces/" + image_name, "training_images/" + people_indexes.get(int(value_selected)) + "/" + image_name)
+
+print("Classification process finished. Exiting...")
