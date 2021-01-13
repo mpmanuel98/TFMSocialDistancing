@@ -29,6 +29,12 @@ Parameters
 # 2.- foscam
 CAMERA = "hikvision"
 
+# define the total number of images to take
+NUM_IMAGES = 5
+
+# define the refresh time (in seconds) between images taken
+FREQUENCE = 5
+
 """
 Script
 ----------
@@ -40,7 +46,7 @@ if not os.path.exists("training_images/cropped_temp_faces"):
 print("Starting the general face detection process...")
 
 face_id = 0
-for iteration in range(0,5):
+for iteration in range(0,NUM_IMAGES):
 
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
@@ -68,7 +74,7 @@ for iteration in range(0,5):
         face_id += 1
     
     print("Captures taken and saved!")
-    time.sleep(5)
+    time.sleep(FREQUENCE)
 
 print("General face detection process finished.")
 
