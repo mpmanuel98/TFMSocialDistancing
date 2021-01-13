@@ -37,11 +37,10 @@ Script
 if not os.path.exists("training_images/cropped_temp_faces"):
     os.makedirs("training_images/cropped_temp_faces")
 
-"""
 print("Starting the general face detection process...")
 
 face_id = 0
-for iteration in range(1,5):
+for iteration in range(0,5):
 
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
@@ -69,10 +68,9 @@ for iteration in range(1,5):
         face_id += 1
     
     print("Captures taken and saved!")
-    time.sleep(1)
+    time.sleep(5)
 
 print("General face detection process finished.")
-"""
 
 print("Starting the classification process...")
 

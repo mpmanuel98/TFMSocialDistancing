@@ -465,7 +465,11 @@ def take_and_save_capture(camera_url, dir_dest):
         Response status code (200 = Success).
     """
 
-    response = requests.get(camera_url, params=params_take_snap)
+    # type(response.content) -> <class 'bytes'>
+    # type(io.BytesIO(response.content)) -> <class '_io.BytesIO'>
+    # type(pil_image) -> <class 'PIL.JpegImagePlugin.JpegImageFile'>
+
+    response = requests.get(camera_url, params=params_take_snap)    
     pil_image = Image.open(io.BytesIO(response.content))
     pil_image.save(dir_dest)
 

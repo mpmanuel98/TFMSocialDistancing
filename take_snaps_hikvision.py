@@ -38,6 +38,7 @@ for i in range(1, 100):
     name = name + ".png"
 
     ret, frame = cap.read()
+    # type(frame) -> <class 'numpy.ndarray'>
     cv2.imwrite(name,frame)
     time.sleep(2)
 
