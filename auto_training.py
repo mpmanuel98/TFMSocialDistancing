@@ -33,7 +33,7 @@ CAMERA = "hikvision"
 NUM_IMAGES = 5
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 5
+FREQUENCE = 3600 / (NUM_IMAGES)
 
 """
 Script
