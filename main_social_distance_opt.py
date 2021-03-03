@@ -44,7 +44,7 @@ if(CAMERA == "foscam"):
     # define the minimum size in pixels that a face size must be
     MIN_SIZE = 50
 
-    # define the focal length of the camera (in mm)
+    # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2.8
 elif(CAMERA == "hikvision"):
     # define the minimum safe distance (in pixels) that two people can be from each other
@@ -56,8 +56,8 @@ elif(CAMERA == "hikvision"):
     # define the minimum size in pixels that a face size must be
     MIN_SIZE = 200
 
-    # define the focal length of the camera (in mm)
-    FOCAL_LENGTH = 2.8
+    # define the focal length of the camera (F = (P x D) / W)
+    FOCAL_LENGTH = 2305
 else:
     exit()
 
@@ -65,6 +65,8 @@ else:
 Script
 ----------
 """
+# Distance = FocalLength in mm * (Real object width in mm) / (Virtual object width in px)
+
 
 # str(time.strftime("%d_%m_%Y-%H.%M.%S"))
 filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
@@ -89,12 +91,17 @@ for iteration in range(1, 10):
         continue
 
     centroids = []
+    distances = []
     #face_index = 0
     for face in faces:
         x, y, w, h = face
 
-        # compute and store the centroids of the faces detected
+        # compute and store the centroids and distances to camera of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
+        distance = (15 * FOCAL_LENGTH) / ((x+w) - x)
+
+        print(distance)
+        distances.append(distance)
         centroids.append(centroid)
 
         # plot the centroid and the rectangle arround the faces
