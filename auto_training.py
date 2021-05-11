@@ -6,13 +6,13 @@ Script auto_capture.py.
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
-import argparse
 import io
 import os
-import time
-import cv2
 import shutil
+import time
 
+import cv2
+import mysql.connector
 from PIL import Image
 
 import modules.foscam_webcams as FWC
@@ -22,6 +22,15 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
+# define the conector to the mysql database
+db_connector = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="admin",
+  database="AsignaturaTest"
+)
+
+db_cursor = db_connector.cursor()
 
 # define the camera to use
 # 1.- hikvision
@@ -94,7 +103,13 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
         if(people_dirs == "cropped_temp_faces"):
             continue
 
-        print(str(index) + " -> " + people_dirs)
+        sql = ("SELECT nombre FROM estudiantes WHERE dni = %s")
+        values = (people_dirs, )
+        db_cursor.execute(sql, values)
+
+        myresult = db_cursor.fetchone()
+        
+        print(str(index) + " -> " + myresult[0])
         people_indexes[index] = people_dirs
 
         index += 1
@@ -110,11 +125,20 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
     if(int(value_selected) == int(len(people_indexes) - 1)):
 
         new_name = input("\nInsert the name of the new person: ")
+        new_id = input("\nInsert the ID of the new person: ")
 
-        if not os.path.exists("training_images/" + new_name):
-            os.makedirs("training_images/" + new_name)
+        sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
+        values = (new_id, new_name)
+        db_cursor.execute(sql, values)
 
-        shutil.move("training_images/cropped_temp_faces/" + image_name, "training_images/" + new_name + "/" + image_name)
+        db_connector.commit()
+
+        print(db_cursor.rowcount, "person inserted in the DB.")
+
+        if not os.path.exists("training_images/" + new_id):
+            os.makedirs("training_images/" + new_id)
+
+        shutil.move("training_images/cropped_temp_faces/" + image_name, "training_images/" + new_id + "/" + image_name)
     elif(int(value_selected) == int(len(people_indexes))):
         os.remove("training_images/cropped_temp_faces/" + image_name)
     else:

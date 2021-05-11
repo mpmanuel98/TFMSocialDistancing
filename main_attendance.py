@@ -15,6 +15,7 @@ import io
 import time
 
 import cv2
+import mysql.connector
 import numpy as np
 from PIL import Image
 
@@ -25,6 +26,15 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
+# define the conector to the mysql database
+mydb = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="admin",
+  database="AsignaturaTest"
+)
+
+mycursor = mydb.cursor()
 
 # define the camera to use
 # 1.- hikvision
@@ -42,6 +52,14 @@ faces, labels, subject_names = OFP.create_recognition_structures("training_image
 recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
 print("Pre-processing finished!")
+
+sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
+val = (new_id, new_name)
+mycursor.execute(sql, val)
+
+mydb.commit()
+
+print(mycursor.rowcount, "person inserted in the DB.")
 
 #str(time.strftime("%d_%m_%Y-%H.%M.%S"))
 filename = "Asistencia el " + str(time.strftime("%d_%m_%Y")) + ".txt"
