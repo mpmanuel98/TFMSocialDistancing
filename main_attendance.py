@@ -18,7 +18,6 @@ import cv2
 import numpy as np
 from PIL import Image
 
-import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
 

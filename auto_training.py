@@ -15,7 +15,6 @@ import shutil
 
 from PIL import Image
 
-import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
 
@@ -33,7 +32,7 @@ CAMERA = "hikvision"
 NUM_IMAGES = 5
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 3600 / (NUM_IMAGES)
+FREQUENCE = 10 / (NUM_IMAGES)
 
 """
 Script
