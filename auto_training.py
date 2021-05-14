@@ -1,6 +1,6 @@
 """
-Script auto_capture.py.
-
+Script auto_capture.py
+-----------------------
 """
 
 __version__ = "1.0"
@@ -22,19 +22,18 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
-# define the conector to the mysql database
+# define the conector to the mysql db
 db_connector = mysql.connector.connect(
   host="localhost",
   user="root",
   password="admin",
-  database="AsignaturaTest"
+  database="asignaturaTest"
 )
 
-db_cursor = db_connector.cursor()
+# define the db cursor
+db_cursor = db_connector.cursor(buffered=True)
 
-# define the camera to use
-# 1.- hikvision
-# 2.- foscam
+# define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
 
 # define the total number of images to take
@@ -45,7 +44,7 @@ FREQUENCE = 10 / (NUM_IMAGES)
 
 """
 Script
-----------
+------
 """
 
 if not os.path.exists("training_images/cropped_temp_faces"):
@@ -54,8 +53,8 @@ if not os.path.exists("training_images/cropped_temp_faces"):
 print("Starting the general face detection process...")
 
 face_id = 0
-for iteration in range(0,NUM_IMAGES):
-
+for iteration in range(0, NUM_IMAGES):
+    # take a capture from the IP camera
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
         pil_image = Image.open(io.BytesIO(img))
@@ -70,11 +69,13 @@ for iteration in range(0,NUM_IMAGES):
     imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     pil_img = Image.fromarray(imageRGB)
 
+    # detect faces in the capture taken
     faces = OFP.detect_faces(image, 150)
 
     if faces is None:
         continue
 
+    # save the cropped face in a temporary directory
     for face in faces:
         x, y, w, h = face
         pil_img = pil_img.crop((x, y, x+w, y+h))
@@ -92,6 +93,7 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
 
     image = cv2.imread("training_images/cropped_temp_faces/" + image_name)
 
+    # show the capture taken to the user
     cv2.imshow("Press any key to start the classification...", image)
     cv2.waitKey(0)
 
@@ -102,11 +104,11 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
 
         if(people_dirs == "cropped_temp_faces"):
             continue
-
+        
+        # get person name using the ID
         sql = ("SELECT nombre FROM estudiantes WHERE dni = %s")
         values = (people_dirs, )
         db_cursor.execute(sql, values)
-
         myresult = db_cursor.fetchone()
         
         print(str(index) + " -> " + myresult[0])
@@ -127,13 +129,18 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
         new_name = input("\nInsert the name of the new person: ")
         new_id = input("\nInsert the ID of the new person: ")
 
+        # insert the person in the db
         sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
         values = (new_id, new_name)
-        db_cursor.execute(sql, values)
+        try:  
+            db_cursor.execute(sql, values)
+        except:
+            print("Person already inserted in the DB with the provided ID.")
 
         db_connector.commit()
 
-        print(db_cursor.rowcount, "person inserted in the DB.")
+        if(db_cursor.rowcount == 1):
+            print("1 person inserted in the DB.")
 
         if not os.path.exists("training_images/" + new_id):
             os.makedirs("training_images/" + new_id)
