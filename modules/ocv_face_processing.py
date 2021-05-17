@@ -87,6 +87,7 @@ def detect_faces(image, min_size):
     faces_detected, weights = cv2.groupRectangles(np.array(faces_aux).tolist(), 1, 0.50)
 
     return faces_detected
+ 
 
 def create_recognition_structures(training_images_path):
     """Creates the structures necessary to make the subsequent
@@ -214,6 +215,33 @@ class Recognizer:
             self.recognizer = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
             
         self.recognizer.train(faces, np.array(labels))
+
+    def identify_single_face(self, image):
+        """Identify a face in a given cropped image.
+
+        Parameters
+        ----------
+        img : Jpeg image data
+            Data corresponding to the single cropped face image.
+
+        Returns
+        -------
+        list
+            List with the name and the confidence of the person recognized.
+        """
+
+        face_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        face_resized = cv2.resize(face_gray, (200, 200))
+
+        info_recognizer = self.recognizer.predict(face_resized)
+
+        person = []
+        label_text = self.names.get(info_recognizer[0])
+        person.append(label_text)
+        person.append(info_recognizer[1])
+
+        return person
+
 
     def predict(self, img):
         """Tries to recognize a person in the given image.

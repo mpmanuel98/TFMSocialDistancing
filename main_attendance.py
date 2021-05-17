@@ -2,7 +2,6 @@
 Script main_attendance.py
 -------------------------
 """
-
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
@@ -30,7 +29,7 @@ db_connector = mysql.connector.connect(
   host="localhost",
   user="root",
   password="admin",
-  database="AsignaturaTest"
+  database="asignaturatest"
 )
 
 db_cursor = db_connector.cursor(buffered=True)
@@ -39,13 +38,13 @@ db_cursor = db_connector.cursor(buffered=True)
 CAMERA = "hikvision"
 
 # define the total number of images to take
-NUM_IMAGES = 20
+NUM_IMAGES = 5
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 20 / (NUM_IMAGES)
+FREQUENCE = 10 / (NUM_IMAGES)
 
 # define the actual date
-ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
+ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')
 
 """
 Script
@@ -108,18 +107,17 @@ for iteration in range(1, NUM_IMAGES):
                 print(person[0], "recognized.")
 
                 # insert the person in the db
-                sql = "INSERT INTO asistencia (dni, codigo, fecha) VALUES (%s, %s, %s)"
-                values = (person[0], CODE, ACTUAL_DATE)
-
                 try:  
+                    sql = "INSERT INTO asistencia (dni, codigo, fecha) VALUES (%s, %s, %s)"
+                    values = (person[0], CODE, ACTUAL_DATE)
+                    
                     db_cursor.execute(sql, values)
+                    db_connector.commit()
+
+                    if(db_cursor.rowcount == 1):
+                        print("1 person listed in the DB.")
                 except:
                     print("Person already listed in the DB.")
-
-                db_connector.commit()
-
-                if(db_cursor.rowcount == 1):
-                    print("1 person listed in the DB.")
 
     # wait some time (frequence)
     time.sleep(FREQUENCE)

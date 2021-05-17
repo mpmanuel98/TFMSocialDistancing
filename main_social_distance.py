@@ -1,24 +1,19 @@
 """
 Script main_social_distance.py.
-
-Description
-
-Also a function is defined:
-    function(variable)
+-------------------------------
 """
-
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
-import datetime
-import time
 import io
-import os
+import time
+from datetime import datetime
 
-from scipy.spatial import distance as dist
 import cv2
+import mysql.connector
 import numpy as np
 from PIL import Image
+from scipy.spatial import distance as dist
 
 import modules.foscam_webcams as FWC
 import modules.ocv_face_processing as OFP
@@ -27,10 +22,7 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
-
-# define the camera to use
-# 1.- hikvision
-# 2.- foscam
+# define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
 
 if(CAMERA == "foscam"):
@@ -41,7 +33,7 @@ if(CAMERA == "foscam"):
     RELATION = (16, 3)
 
     # define the minimum size in pixels that a face size must be
-    min_size = 50
+    MIN_SIZE = 50
 elif(CAMERA == "hikvision"):
     # define the minimum safe distance (in pixels) that two people can be from each other
     MIN_DISTANCE = 1500
@@ -50,20 +42,41 @@ elif(CAMERA == "hikvision"):
     RELATION = (36, 3)
 
     # define the minimum size in pixels that a face size must be
-    min_size = 200
+    MIN_SIZE = 200
 else:
     exit()
+
+# define the conector to the mysql database
+db_connector = mysql.connector.connect(
+  host="localhost",
+  user="root",
+  password="admin",
+  database="asignaturatest"
+)
+
+db_cursor = db_connector.cursor(buffered=True)
+
+# define the total number of images to take
+NUM_IMAGES = 5
+
+# define the refresh time (in seconds) between images taken
+FREQUENCE = 10 / (NUM_IMAGES)
+
+# define the actual date
+ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')
 
 """
 Script
 ----------
 """
+print("Starting pre-processing...")
 
-# str(time.strftime("%d_%m_%Y-%H.%M.%S"))
-filename = "Registro del " + str(time.strftime("%d_%m_%Y")) + ".txt"
-violations_reg = open(filename, "w")
+faces, labels, subject_names = OFP.create_recognition_structures("training_images")
+recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
-for iteration in range(1, 10):
+print("Pre-processing finished!")
+
+for iteration in range(1, NUM_IMAGES):
 
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
@@ -76,25 +89,29 @@ for iteration in range(1, 10):
     else:
         exit()
 
-    faces = OFP.detect_faces(image, min_size)
+    faces = OFP.detect_faces(image, MIN_SIZE)
 
     if faces is None:
         continue
 
     centroids = []
-    #face_index = 0
+    centroids_ids = dict()
     for face in faces:
         x, y, w, h = face
+        
+        face_cropped = image[y:y+h, x:x+w]
+        person = recognizer.identify_single_face(face_cropped)
 
         # compute and store the centroids of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
         centroids.append(centroid)
 
+        # save the correspondence between the centroid and the person
+        centroids_ids[person[0]] = centroid
+
         # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=3)
         cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-
-        #face_index += 1
 
     # compute the euclidean distance between the centroids
     dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
@@ -103,7 +120,6 @@ for iteration in range(1, 10):
     for i in range(0, dist_comp.shape[0]):
         relations = []
         for j in range(0, dist_comp.shape[1]):
-
             # check if the distance between two centroid pairs is less than the threshold
             if (dist_comp[i, j] < MIN_DISTANCE) and (dist_comp[i, j] > 0):
                 relations.append((centroids[j], dist_comp[i, j]))
@@ -117,32 +133,39 @@ for iteration in range(1, 10):
     for key, value in violations.items():
         for rel_tuple in value:
 
-            cv2.line(image, key, rel_tuple[0],
-                     (0, 0, 255), thickness=1, lineType=8)
+            cv2.line(image, key, rel_tuple[0], (0, 0, 255), thickness=1, lineType=8)
 
-            midPoint = (int((key[0] + rel_tuple[0][0]) / 2),
-                        int((key[1] + rel_tuple[0][1]) / 2))
+            midPoint = (int((key[0] + rel_tuple[0][0]) / 2), int((key[1] + rel_tuple[0][1]) / 2))
 
             real_distance = rel_tuple[1] * RELATION[1] / RELATION[0]
 
-            cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint,
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+            cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            line_reg = str(key) + " con " + str(rel_tuple[0]) + " a las " + str(time.strftime("%H.%M.%S")) + " a una distancia aproximada de: " + str(round(real_distance, 2)) + " cms\n"
-            violations_reg.write(line_reg)
+            # insert alert in the db
+            for sub_key, sub_value in centroids_ids.items():
+                if(sub_value == key):
+                    person_id1 = sub_key
+                if(sub_value == rel_tuple[0]):
+                    person_id2 = sub_key
+            
+            try:  
+                sql = "INSERT INTO alertas_distancia (fecha, dni_estudiante1, dni_estudiante2) VALUES (%s, %s, %s)"
+                sql_values = (ACTUAL_DATE, person_id1, person_id2)
+                db_cursor.execute(sql, sql_values)
+                db_connector.commit()
+
+                if(db_cursor.rowcount == 1):
+                    print("1 alert inserted in the DB.")
+            except:
+                print("Alert already inserted in the DB with the provided IDs.")
 
             num_violations += 1
 
-    text = "Violaciones de la Distancia de Seguridad: " + \
-        str(num_violations / 2)
-    cv2.putText(image, text, (10, image.shape[0] - 25),
-                cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
+    text = "Violaciones de la Distancia de Seguridad: " + str(num_violations / 2)
+    cv2.putText(image, text, (10, image.shape[0] - 25), cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
     name = "iteracion_" + str(iteration) + ".png"
     cv2.imwrite(name, image)
 
-    image = cv2.resize(image, (1920, 1080))
-    cv2.imshow("Image:", image)
-    cv2.waitKey(1)
-
-violations_reg.close()
+    # wait some time (frequence)
+    time.sleep(FREQUENCE)

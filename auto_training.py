@@ -1,8 +1,7 @@
 """
-Script auto_capture.py
+Script auto_training.py
 -----------------------
 """
-
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
@@ -27,7 +26,7 @@ db_connector = mysql.connector.connect(
   host="localhost",
   user="root",
   password="admin",
-  database="asignaturaTest"
+  database="asignaturatest"
 )
 
 # define the db cursor
@@ -130,17 +129,17 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
         new_id = input("\nInsert the ID of the new person: ")
 
         # insert the person in the db
-        sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
-        values = (new_id, new_name)
         try:  
+            sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
+            values = (new_id, new_name)
+            
             db_cursor.execute(sql, values)
+            db_connector.commit()
+
+            if(db_cursor.rowcount == 1):
+                print("1 person inserted in the DB.")
         except:
             print("Person already inserted in the DB with the provided ID.")
-
-        db_connector.commit()
-
-        if(db_cursor.rowcount == 1):
-            print("1 person inserted in the DB.")
 
         if not os.path.exists("training_images/" + new_id):
             os.makedirs("training_images/" + new_id)
