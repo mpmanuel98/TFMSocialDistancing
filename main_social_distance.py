@@ -57,10 +57,10 @@ db_connector = mysql.connector.connect(
 db_cursor = db_connector.cursor(buffered=True)
 
 # define the total number of images to take
-NUM_IMAGES = 5
+NUM_IMAGES = 20
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 10 / (NUM_IMAGES)
+FREQUENCE = 40 / (NUM_IMAGES)
 
 # define the actual date
 ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')
