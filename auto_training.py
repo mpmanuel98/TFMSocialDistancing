@@ -105,7 +105,7 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
             continue
         
         # get person name using the ID
-        sql = ("SELECT nombre FROM estudiantes WHERE dni = %s")
+        sql = ("SELECT nombre FROM estudiante WHERE dni = %s")
         values = (people_dirs, )
         db_cursor.execute(sql, values)
         myresult = db_cursor.fetchone()
@@ -130,7 +130,7 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
 
         # insert the person in the db
         try:  
-            sql = "INSERT INTO estudiantes (dni, nombre) VALUES (%s, %s)"
+            sql = "INSERT INTO estudiante (dni, nombre) VALUES (%s, %s)"
             values = (new_id, new_name)
             
             db_cursor.execute(sql, values)
