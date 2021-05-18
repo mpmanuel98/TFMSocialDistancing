@@ -5,6 +5,7 @@ Script main_social_distance.py.
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
+import argparse
 import io
 import time
 from datetime import datetime
@@ -63,7 +64,11 @@ NUM_IMAGES = 20
 FREQUENCE = 40 / (NUM_IMAGES)
 
 # define the code of the sesion
-CODE = 71142104
+parser = argparse.ArgumentParser(description="Subject.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-c", "--subject_code", help="The code of the subject.", type=str, default="71142104")
+args = parser.parse_args()
+
+CODE = int(args.subject_code)
 
 # define the actual date
 ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')

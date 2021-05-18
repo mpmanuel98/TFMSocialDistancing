@@ -5,6 +5,7 @@ Script main_attendance.py
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
+import argparse
 import io
 import time
 from datetime import datetime
@@ -21,8 +22,13 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
-SUBJECT = "Cloud Computing"
-CODE = 71142104
+parser = argparse.ArgumentParser(description="Subject.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser.add_argument("-n", "--subject_name", help="The name of the subject.", type=str, default="Cloud Computing")
+parser.add_argument("-c", "--subject_code", help="The code of the subject.", type=str, default="71142104")
+args = parser.parse_args()
+
+SUBJECT = args.subject_name
+CODE = int(args.subject_code)
 
 # define the conector to the mysql database
 db_connector = mysql.connector.connect(
