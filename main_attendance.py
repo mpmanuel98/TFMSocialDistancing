@@ -29,7 +29,7 @@ db_connector = mysql.connector.connect(
   host="localhost",
   user="root",
   password="admin",
-  database="asignaturatest"
+  database="tfm_control_aula"
 )
 
 db_cursor = db_connector.cursor(buffered=True)

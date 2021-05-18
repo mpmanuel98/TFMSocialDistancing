@@ -66,7 +66,7 @@ db_connector = mysql.connector.connect(
   host="localhost",
   user="root",
   password="admin",
-  database="asignaturatest"
+  database="tfm_control_aula"
 )
 
 db_cursor = db_connector.cursor(buffered=True)
@@ -76,6 +76,9 @@ NUM_IMAGES = 20
 
 # define the refresh time (in seconds) between images taken
 FREQUENCE = 40 / (NUM_IMAGES)
+
+# define the code of the sesion
+CODE = 71142104
 
 # define the actual date
 ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')
@@ -171,8 +174,8 @@ for iteration in range(1, 10):
                     person_id2 = sub_key
             
             try:  
-                sql = "INSERT INTO alertas_distancia (fecha, dni_estudiante1, dni_estudiante2) VALUES (%s, %s, %s)"
-                sql_values = (ACTUAL_DATE, person_id1, person_id2)
+                sql = "INSERT INTO alertas_distancia (fecha, codigo, dni_estudiante1, dni_estudiante2) VALUES (%s, %s, %s, %s)"
+                sql_values = (ACTUAL_DATE, CODE, person_id1, person_id2)
                 db_cursor.execute(sql, sql_values)
                 db_connector.commit()
 
