@@ -11,9 +11,9 @@ __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
 import argparse
-import datetime
 import io
 import time
+from datetime import datetime
 
 import cv2
 import mysql.connector
@@ -28,15 +28,12 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
-
-# define the camera to use
-# 1.- hikvision
-# 2.- foscam
+# define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
 
 if(CAMERA == "foscam"):
-    # define the minimum safe distance (in pixels) that two people can be from each other
-    MIN_DISTANCE = 1500
+    # define the minimum safe distance (in cms) that two people can be from each other
+    MIN_DISTANCE = 150
 
     # define the relation between pixels and cms (pixels, cms)
     RELATION = (16, 3)
@@ -47,14 +44,14 @@ if(CAMERA == "foscam"):
     # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2.8
 elif(CAMERA == "hikvision"):
-    # define the minimum safe distance (in pixels) that two people can be from each other
-    MIN_DISTANCE = 1500
+    # define the minimum safe distance (in cms) that two people can be from each other
+    MIN_DISTANCE = 150
 
     # define the relation between pixels and cms (pixels, cms)
     RELATION = (36, 3)
 
     # define the minimum size in pixels that a face size must be
-    MIN_SIZE = 200
+    MIN_SIZE = 100
 
     # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2305
@@ -91,8 +88,6 @@ ACTUAL_DATE = (datetime.now()).strftime('%Y-%m-%d')
 Script
 ----------
 """
-# Distance = FocalLength in mm * (Real object width in mm) / (Virtual object width in px)
-
 print("Starting pre-processing...")
 
 faces, labels, subject_names = OFP.create_recognition_structures("training_images")
@@ -126,9 +121,10 @@ for iteration in range(1, 10):
         
         face_cropped = image[y:y+h, x:x+w]
         person = recognizer.identify_single_face(face_cropped)
-
+        print(person)
         # compute and store the centroids and distances to camera of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
+        # Distance = FocalLength in mm * (Real object width in mm) / (Virtual object width in px)
         distance = (15 * FOCAL_LENGTH) / ((x+w) - x)
 
         print(distance)
@@ -136,7 +132,8 @@ for iteration in range(1, 10):
         centroids.append(centroid)
 
         # save the correspondence between the centroid and the person
-        centroids_ids[person[0]] = centroid
+        if(person[1] < 2000):
+            centroids_ids[person[0]] = centroid
 
         # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=3)
@@ -144,19 +141,33 @@ for iteration in range(1, 10):
 
     # compute the euclidean distance between the centroids
     dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
+    print(dist_comp)
 
     violations = dict()
+    i = 0
+    j = 0
     for i in range(0, dist_comp.shape[0]):
         relations = []
         for j in range(0, dist_comp.shape[1]):
+            if(dist_comp[i, j] == 0):
+                continue
+
+            dist_diff = abs(distances[i] - distances[j])
+            dist_ij = dist_comp[i, j] * RELATION[1] / RELATION[0]
+            dist_final = np.sqrt(pow(dist_diff, 2) + pow(dist_ij, 2))
+
+            print("Distancia final es " + str(dist_final))
+
             # check if the distance between two centroid pairs is less than the threshold
-            if (dist_comp[i, j] < MIN_DISTANCE) and (dist_comp[i, j] > 0):
-                relations.append((centroids[j], dist_comp[i, j]))
+            if (dist_final < MIN_DISTANCE) and (dist_final > 0):
+                relations.append((centroids[j], dist_final))
+            j+=1
 
         if len(relations) == 0:
             continue
 
         violations[centroids[i]] = relations
+        i+=1
 
     num_violations = 0
     for key, value in violations.items():
@@ -166,18 +177,16 @@ for iteration in range(1, 10):
 
             midPoint = (int((key[0] + rel_tuple[0][0]) / 2), int((key[1] + rel_tuple[0][1]) / 2))
 
-            real_distance = rel_tuple[1] * RELATION[1] / RELATION[0]
+            cv2.putText(image, str(round(rel_tuple[1], 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
-            # insert alert in the db
-            for sub_key, sub_value in centroids_ids.items():
-                if(sub_value == key):
-                    person_id1 = sub_key
-                if(sub_value == rel_tuple[0]):
-                    person_id2 = sub_key
-            
+            # insert alert in the db           
             try:  
+                for sub_key, sub_value in centroids_ids.items():
+                    if(sub_value == key):
+                        person_id1 = sub_key
+                    if(sub_value == rel_tuple[0]):
+                        person_id2 = sub_key
+
                 sql = "INSERT INTO alertas_distancia (fecha, codigo, dni_estudiante1, dni_estudiante2) VALUES (%s, %s, %s, %s)"
                 sql_values = (ACTUAL_DATE, CODE, person_id1, person_id2)
                 db_cursor.execute(sql, sql_values)

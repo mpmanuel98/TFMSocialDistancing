@@ -109,13 +109,14 @@ for iteration in range(1, NUM_IMAGES):
         
         face_cropped = image[y:y+h, x:x+w]
         person = recognizer.identify_single_face(face_cropped)
-
+        print(person)
         # compute and store the centroids of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
         centroids.append(centroid)
 
         # save the correspondence between the centroid and the person
-        centroids_ids[person[0]] = centroid
+        if(person[1] < 2000):
+            centroids_ids[person[0]] = centroid
 
         # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=3)
@@ -149,14 +150,14 @@ for iteration in range(1, NUM_IMAGES):
 
             cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            # insert alert in the db
-            for sub_key, sub_value in centroids_ids.items():
-                if(sub_value == key):
-                    person_id1 = sub_key
-                if(sub_value == rel_tuple[0]):
-                    person_id2 = sub_key
-            
+            # insert alert in the db           
             try:  
+                for sub_key, sub_value in centroids_ids.items():
+                    if(sub_value == key):
+                        person_id1 = sub_key
+                    if(sub_value == rel_tuple[0]):
+                        person_id2 = sub_key
+
                 sql = "INSERT INTO alertas_distancia (fecha, codigo, dni_estudiante1, dni_estudiante2) VALUES (%s, %s, %s, %s)"
                 sql_values = (ACTUAL_DATE, CODE, person_id1, person_id2)
                 db_cursor.execute(sql, sql_values)
