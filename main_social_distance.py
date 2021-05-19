@@ -129,9 +129,13 @@ for iteration in range(1, NUM_IMAGES):
     for i in range(0, dist_comp.shape[0]):
         relations = []
         for j in range(0, dist_comp.shape[1]):
+            if(dist_comp[i, j] == 0):
+                continue
+
+            dist_real = dist_comp[i, j] * RELATION[1] / RELATION[0]
             # check if the distance between two centroid pairs is less than the threshold
-            if (dist_comp[i, j] < MIN_DISTANCE) and (dist_comp[i, j] > 0):
-                relations.append((centroids[j], dist_comp[i, j]))
+            if (dist_real < MIN_DISTANCE) and (dist_real > 0):
+                relations.append((centroids[j], dist_real))
 
         if len(relations) == 0:
             continue
@@ -146,11 +150,9 @@ for iteration in range(1, NUM_IMAGES):
 
             midPoint = (int((key[0] + rel_tuple[0][0]) / 2), int((key[1] + rel_tuple[0][1]) / 2))
 
-            real_distance = rel_tuple[1] * RELATION[1] / RELATION[0]
+            cv2.putText(image, str(round(rel_tuple[1], 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
-            cv2.putText(image, str(round(real_distance, 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
-
-            # insert alert in the db           
+            # insert alert in the db
             try:  
                 for sub_key, sub_value in centroids_ids.items():
                     if(sub_value == key):
@@ -173,8 +175,10 @@ for iteration in range(1, NUM_IMAGES):
     text = "Violaciones de la Distancia de Seguridad: " + str(num_violations / 2)
     cv2.putText(image, text, (10, image.shape[0] - 25), cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
-    name = "iteracion_" + str(iteration) + ".png"
-    cv2.imwrite(name, image)
+    # only save captures with violations of safety distance
+    if(num_violations != 0):
+        name = "iteracion_" + str(iteration) + ".png"
+        cv2.imwrite(name, image)
 
     # wait some time (frequence)
     time.sleep(FREQUENCE)
