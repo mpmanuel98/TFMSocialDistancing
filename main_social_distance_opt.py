@@ -125,7 +125,7 @@ for iteration in range(1, 10):
         # compute and store the centroids and distances to camera of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
         # Distance = FocalLength in mm * (Real object width in mm) / (Virtual object width in px)
-        distance = (15 * FOCAL_LENGTH) / ((x+w) - x)
+        distance = (14.5 * FOCAL_LENGTH) / ((x+w) - x)
 
         print(distance)
         distances.append(distance)
@@ -154,7 +154,8 @@ for iteration in range(1, 10):
 
             dist_diff = abs(distances[i] - distances[j])
             dist_ij = dist_comp[i, j] * RELATION[1] / RELATION[0]
-            dist_final = np.sqrt(pow(dist_diff, 2) + pow(dist_ij, 2))
+            # dist_final = np.sqrt(pow(dist_diff, 2) + pow(dist_ij, 2))
+            dist_final = dist_diff + dist_ij
 
             print("Distancia final es " + str(dist_final))
 
