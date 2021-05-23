@@ -21,6 +21,13 @@ import cv2
 import numpy as np
 
 """
+Parameters
+----------
+"""
+FACE_CROP_SIZE = 100
+FACE_MIN_SIZE = 50
+
+"""
 Definitions (functions)
 ----------
 """
@@ -134,7 +141,7 @@ def create_recognition_structures(training_images_path):
             image = cv2.imread(image_path)
             image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-            detected_faces = detect_faces(image_gray, 150)
+            detected_faces = detect_faces(image_gray, FACE_MIN_SIZE)
 
             if detected_faces is None:
                 print("No face here")
@@ -143,7 +150,7 @@ def create_recognition_structures(training_images_path):
             for face in detected_faces:
                 x, y, w, h = face
                 face_cropped = image_gray[y:y+h, x:x+w]
-                face_resized = cv2.resize(face_cropped, (200, 200))
+                face_resized = cv2.resize(face_cropped, (FACE_CROP_SIZE, FACE_CROP_SIZE))
 
                 faces.append(face_resized)
                 labels.append(subject_index)
@@ -231,7 +238,7 @@ class Recognizer:
         """
 
         face_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-        face_resized = cv2.resize(face_gray, (200, 200))
+        face_resized = cv2.resize(face_gray, (FACE_CROP_SIZE, FACE_CROP_SIZE))
 
         info_recognizer = self.recognizer.predict(face_resized)
 
@@ -259,7 +266,7 @@ class Recognizer:
             recognized.
         """
 
-        face_list = detect_faces(img, 150)
+        face_list = detect_faces(img, FACE_MIN_SIZE)
 
         if face_list is None:
             return None
@@ -269,7 +276,7 @@ class Recognizer:
         for face in face_list:
             x, y, w, h = face
             face_cropped = img[y:y+h, x:x+w]
-            face_resized = cv2.resize(face_cropped, (200, 200))
+            face_resized = cv2.resize(face_cropped, (FACE_CROP_SIZE, FACE_CROP_SIZE))
 
             info_recognizer = self.recognizer.predict(face_resized)
 

@@ -21,6 +21,8 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
+FACE_MIN_SIZE = 50
+
 # define the conector to the mysql db
 db_connector = mysql.connector.connect(
   host="localhost",
@@ -36,10 +38,10 @@ db_cursor = db_connector.cursor(buffered=True)
 CAMERA = "hikvision"
 
 # define the total number of images to take
-NUM_IMAGES = 5
+NUM_IMAGES = 10
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 10 / (NUM_IMAGES)
+FREQUENCE = 20 / (NUM_IMAGES)
 
 """
 Script
@@ -69,7 +71,7 @@ for iteration in range(0, NUM_IMAGES):
     pil_img = Image.fromarray(imageRGB)
 
     # detect faces in the capture taken
-    faces = OFP.detect_faces(image, 150)
+    faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
     if faces is None:
         continue
@@ -77,10 +79,19 @@ for iteration in range(0, NUM_IMAGES):
     # save the cropped face in a temporary directory
     for face in faces:
         x, y, w, h = face
-        pil_img = pil_img.crop((x, y, x+w, y+h))
-        pil_img.save("training_images/cropped_temp_faces/image_" + str(face_id) + ".png")
+    
+        face_cropped = image[y:y+h, x:x+w]
+        cv2.imwrite("training_images/cropped_temp_faces/image_" + str(face_id) + ".png", face_cropped)
+
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+
+        #pil_img = pil_img.crop((x, y, x+w, y+h))
+        #pil_img.save("training_images/cropped_temp_faces/image_" + str(face_id) + ".png")
         face_id += 1
     
+    cv2.imwrite("test.png", image)
+    cv2.waitKey(0)
+
     print("Captures taken and saved!")
     time.sleep(FREQUENCE)
 
