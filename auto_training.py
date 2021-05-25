@@ -21,7 +21,8 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
-FACE_MIN_SIZE = 50
+FACE_MIN_SIZE = 30
+FACE_MARGIN = 25
 
 # define the conector to the mysql db
 db_connector = mysql.connector.connect(
@@ -67,9 +68,6 @@ for iteration in range(0, NUM_IMAGES):
     else:
         exit()
 
-    imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    pil_img = Image.fromarray(imageRGB)
-
     # detect faces in the capture taken
     faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
@@ -79,14 +77,11 @@ for iteration in range(0, NUM_IMAGES):
     # save the cropped face in a temporary directory
     for face in faces:
         x, y, w, h = face
-    
-        face_cropped = image[y:y+h, x:x+w]
+        
+        #cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+        face_cropped = image[(y - FACE_MARGIN):(y + h + FACE_MARGIN), (x - FACE_MARGIN):(x + w + FACE_MARGIN)]
         cv2.imwrite("training_images/cropped_temp_faces/image_" + str(face_id) + ".png", face_cropped)
-
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
-
-        #pil_img = pil_img.crop((x, y, x+w, y+h))
-        #pil_img.save("training_images/cropped_temp_faces/image_" + str(face_id) + ".png")
+        
         face_id += 1
     
     cv2.imwrite("test.png", image)

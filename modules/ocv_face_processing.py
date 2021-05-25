@@ -16,7 +16,6 @@ __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
 import os
-import time
 import cv2
 import numpy as np
 
@@ -25,7 +24,7 @@ Parameters
 ----------
 """
 FACE_CROP_SIZE = 100
-FACE_MIN_SIZE = 50
+FACE_MIN_SIZE = 30
 
 """
 Definitions (functions)

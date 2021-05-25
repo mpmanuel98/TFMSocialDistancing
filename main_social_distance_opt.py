@@ -28,6 +28,8 @@ import modules.ocv_face_processing as OFP
 Parameters
 ----------
 """
+FACE_MARGIN = 25
+
 # define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
 
@@ -39,7 +41,7 @@ if(CAMERA == "foscam"):
     RELATION = (16, 3)
 
     # define the minimum size in pixels that a face size must be
-    MIN_SIZE = 50
+    FACE_MIN_SIZE = 120
 
     # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2.8
@@ -51,7 +53,7 @@ elif(CAMERA == "hikvision"):
     RELATION = (36, 3)
 
     # define the minimum size in pixels that a face size must be
-    MIN_SIZE = 100
+    FACE_MIN_SIZE = 30
 
     # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2305
@@ -108,7 +110,7 @@ for iteration in range(1, 10):
     else:
         exit()
 
-    faces = OFP.detect_faces(image, MIN_SIZE)
+    faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
     if faces is None:
         continue
@@ -119,7 +121,7 @@ for iteration in range(1, 10):
     for face in faces:
         x, y, w, h = face
         
-        face_cropped = image[y:y+h, x:x+w]
+        face_cropped = image[(y - FACE_MARGIN):(y + h + FACE_MARGIN), (x - FACE_MARGIN):(x + w + FACE_MARGIN)]
         person = recognizer.identify_single_face(face_cropped)
         print(person)
         # compute and store the centroids and distances to camera of the faces detected
@@ -137,7 +139,7 @@ for iteration in range(1, 10):
 
         # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=3)
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 3)
 
     # compute the euclidean distance between the centroids
     dist_comp = dist.cdist(centroids, centroids, metric="euclidean")
@@ -178,7 +180,7 @@ for iteration in range(1, 10):
 
             midPoint = (int((key[0] + rel_tuple[0][0]) / 2), int((key[1] + rel_tuple[0][1]) / 2))
 
-            cv2.putText(image, str(round(rel_tuple[1], 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+            cv2.putText(image, str(round(rel_tuple[1], 2)) + "cm", midPoint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
 
             # insert alert in the db           
             try:  
