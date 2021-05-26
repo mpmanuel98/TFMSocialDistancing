@@ -1,15 +1,3 @@
-"""
-Script main_general.py.
-
-Description
-
-Also a function is defined:
-    function(variable)
-"""
-
-__version__ = "1.0"
-__author__ = "Manuel Marín Peral"
-
 import datetime
 import time
 import io

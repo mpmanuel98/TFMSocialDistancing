@@ -1,6 +1,4 @@
-import modules.azure_faceapi as AFA
 import modules.foscam_webcams as FWC
-#import face_recognition as FR
 import requests
 import xml.etree.ElementTree as ET
 import io
