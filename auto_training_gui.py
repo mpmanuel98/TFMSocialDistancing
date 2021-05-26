@@ -38,18 +38,16 @@ db_connector = mysql.connector.connect(
 # define the db cursor
 db_cursor = db_connector.cursor(buffered=True)
 
-# define the total number of images to take
-NUM_IMAGES = 5
-
-# define the refresh time (in seconds) between images taken
-FREQUENCE = 10 / (NUM_IMAGES)
-
+"""
+Classes
+----------
+"""
 class dialog_GUI(QDialog):
 
     def __init__(self, img_name, img_index, parent=None):
         super().__init__(parent)
         # Load the dialog's GUI
-        loadUi("dialog.ui", self)
+        loadUi("gui/dialog.ui", self)
         self.image_name = img_name
         self.image_index = img_index
 
@@ -62,7 +60,6 @@ class dialog_GUI(QDialog):
                 continue
             
             # get person name using the ID
-            # insert the person in the db
             try:  
                 sql = ("SELECT nombre FROM estudiante WHERE dni = %s")
                 values = (people_dirs, )
@@ -73,9 +70,9 @@ class dialog_GUI(QDialog):
                 print("Usuario no encontrado.")
 
         self.image_iteration.setText("Captura #" + str(self.image_index) + " de " + str(len(os.listdir("training_images/cropped_temp_faces/"))))
-        self.button_delete.clicked.connect(self.delete_image)
         self.button_select.clicked.connect(self.select_image)
         self.button_add.clicked.connect(self.new_image)
+        self.button_delete.clicked.connect(self.delete_image)
 
     def select_image(self):
         shutil.move("training_images/cropped_temp_faces/" + self.image_name, "training_images/" + self.combo_user.currentData() + "/" + self.image_name)
@@ -115,10 +112,10 @@ class main_GUI(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        uic.loadUi("main.ui", self)
+        uic.loadUi("gui/main.ui", self)
 
-        self.estado_capturas.setText("Sin obtener.")
-        self.estado_clasificacion.setText("Sin realizar.")
+        self.estado_capturas.setText("Estado: Pendiente.")
+        self.estado_clasificacion.setText("Estado: Pendiente.")
         self.boton_entrenamiento.clicked.connect(self.capture_images)
         self.boton_clasificacion.clicked.connect(self.classify_images)
         self.radio_foscam.clicked.connect(self.select_foscam)
@@ -135,10 +132,16 @@ class main_GUI(QMainWindow):
             os.makedirs("training_images/cropped_temp_faces")
 
         print("Starting the general face detection process...")
-        self.estado_capturas.setText("En proceso...")
+        self.estado_capturas.setText("Estado: En proceso...")
+
+        num_images = int(self.spin_num_capturas.value())
+        frequence = (float(self.spin_tiempo.value()) * 60) / (num_images)
+
+        print(num_images)
+        print(frequence)
 
         face_id = 0
-        for iteration in range(0, NUM_IMAGES):
+        for iteration in range(0, num_images):
             # take a capture from the IP camera
             if(self.CAMERA == "foscam"):
                 img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
@@ -168,14 +171,14 @@ class main_GUI(QMainWindow):
                 face_id += 1
             
             print("Captures taken and saved!")
-            time.sleep(FREQUENCE)
+            time.sleep(frequence)
 
-        self.estado_capturas.setText("Obtenidas.")
+        self.estado_capturas.setText("Estado: Finalizado.")
         print("General face detection process finished.")
 
     def classify_images(self):
         print("Starting the classification process...")
-        self.estado_clasificacion.setText("En proceso...")
+        self.estado_clasificacion.setText("Estado: En proceso...")
 
         img_index = 1
         for image_name in os.listdir("training_images/cropped_temp_faces"):
@@ -183,9 +186,13 @@ class main_GUI(QMainWindow):
             img_index += 1
             dlg.exec()
 
-        self.estado_clasificacion.setText("Realizado.")
+        self.estado_clasificacion.setText("Estado: Finalizado.")
         print("Classification process finished. Exiting...")
 
+"""
+Script
+----------
+"""
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     GUI = main_GUI()

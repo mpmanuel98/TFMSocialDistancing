@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>580</width>
-    <height>381</height>
+    <height>379</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Clasificación</string>
+   <string>Proceso de Clasificación</string>
   </property>
   <property name="windowIcon">
    <iconset>
@@ -20,10 +20,10 @@
   <widget class="QDialogButtonBox" name="buttonBox">
    <property name="geometry">
     <rect>
-     <x>480</x>
-     <y>330</y>
-     <width>81</width>
-     <height>41</height>
+     <x>490</x>
+     <y>340</y>
+     <width>75</width>
+     <height>23</height>
     </rect>
    </property>
    <property name="orientation">
@@ -75,7 +75,7 @@
     </font>
    </property>
    <property name="text">
-    <string>Clasificación</string>
+    <string>Proceso de Clasificación</string>
    </property>
    <property name="alignment">
     <set>Qt::AlignCenter</set>
