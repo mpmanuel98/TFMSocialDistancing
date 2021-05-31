@@ -1,28 +1,7 @@
-"""
-Script main_general.py.
-
-Description
-
-Also a function is defined:
-    function(variable)
-"""
-
-__version__ = "1.0"
-__author__ = "Manuel Marín Peral"
-
-import datetime
-import time
-import io
-import os
-
-from scipy.spatial import distance as dist
 from urllib.request import urlopen
+
 import cv2
 import numpy as np
-from PIL import Image
-
-import modules.foscam_webcams as FWC
-import modules.ocv_face_processing as OFP
 
 stream = urlopen("http://192.168.1.149:81/stream")
 bytes = bytes()

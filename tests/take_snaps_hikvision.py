@@ -1,6 +1,3 @@
-__version__ = "1.0"
-__author__ = "Manuel Marín Peral"
-
 import time
 import cv2
 

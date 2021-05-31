@@ -1,16 +1,7 @@
-import datetime
-import time
-import io
-import os
-
-from scipy.spatial import distance as dist
 import cv2
+import modules.ocv_face_processing as OFP
 import numpy as np
 from PIL import Image
-
-import modules.foscam_webcams as FWC
-import modules.ocv_face_processing as OFP
-
 
 pil_image = Image.open("C:/Users/mpman/Desktop/243543W.jpg")
 image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)

@@ -1,11 +1,5 @@
 import modules.foscam_webcams as FWC
-import requests
-import xml.etree.ElementTree as ET
-import io
 import time
-from PIL import Image
-#import cv2
-import numpy as np
 
 for i in range(1, 100):
     name = "image_foscam_" + str(i)
