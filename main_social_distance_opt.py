@@ -1,10 +1,10 @@
 """
 Script main_social_distance_opt.py.
+-------------------------------
 
-Description
-
-Also a function is defined:
-    function(variable)
+This script controls the social distance violations and
+stores in a MySQL database all the alerts triggered. Depth
+in images considered.
 """
 
 __version__ = "1.0"
@@ -27,13 +27,25 @@ import modules.ocv_face_processing as OFP
 """
 Parameters
 ----------
+Margin (in pixels) around the detected faces.
+Camera model to use.
+Minimum distance (in pixels) between two people.
+Relation between pixels/cms in real life.
+Minimum size (in pixels) a face must be to be taken in mind.
+Focal length of the camera.
+Connector to the MySQL database.
+Number of images to take.
+Frequence between captures.
+Actual date.
+Code of the subject.
 """
-FACE_MARGIN = 25
-
 # define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
 
 if(CAMERA == "foscam"):
+    # define the margin (in pixels) around detected faces
+    FACE_MARGIN = 25
+
     # define the minimum safe distance (in cms) that two people can be from each other
     MIN_DISTANCE = 150
 
@@ -46,6 +58,9 @@ if(CAMERA == "foscam"):
     # define the focal length of the camera (F = (P x D) / W)
     FOCAL_LENGTH = 2.8
 elif(CAMERA == "hikvision"):
+    # define the margin (in pixels) around detected faces
+    FACE_MARGIN = 25
+
     # define the minimum safe distance (in cms) that two people can be from each other
     MIN_DISTANCE = 150
 
@@ -92,6 +107,7 @@ Script
 """
 print("Starting pre-processing...")
 
+# create the recognition structures and initialize the recognizer
 faces, labels, subject_names = OFP.create_recognition_structures("training_images")
 recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
@@ -99,6 +115,7 @@ print("Pre-processing finished!")
 
 for iteration in range(1, 10):
 
+    # get a frame from the IP camera
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
         pil_image = Image.open(io.BytesIO(img))
@@ -110,6 +127,7 @@ for iteration in range(1, 10):
     else:
         exit()
 
+    # detect faces in the frame captured
     faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
     if faces is None:
@@ -172,6 +190,7 @@ for iteration in range(1, 10):
         violations[centroids[i]] = relations
         i+=1
 
+    # iterate through the violations detected
     num_violations = 0
     for key, value in violations.items():
         for rel_tuple in value:

@@ -1,6 +1,8 @@
 """
 Script main_attendance.py
 -------------------------
+
+This script controls the attendance in a session.
 """
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
@@ -21,6 +23,13 @@ import modules.ocv_face_processing as OFP
 """
 Parameters
 ----------
+Camera model to use.
+Connector to the MySQL database.
+Number of images to take.
+Frequence between captures.
+Actual date.
+Name of the subject.
+Code of the subject.
 """
 parser = argparse.ArgumentParser(description="Subject.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-n", "--subject_name", help="The name of the subject.", type=str, default="Cloud Computing")
@@ -82,13 +91,15 @@ if(db_cursor.rowcount == 0):
 
 print("Starting pre-processing...")
 
+# create the recognition structures and initialize the recognizer
 faces, labels, subject_names = OFP.create_recognition_structures("training_images")
 recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
 print("Pre-processing finished!")
 
 for iteration in range(1, NUM_IMAGES):
-    # take a capture from the IP camera
+
+    # get a frame from the IP camera
     if(CAMERA == "foscam"):
         img = FWC.take_capture("http://192.168.1.50:88/cgi-bin/CGIProxy.fcgi?")
         pil_image = Image.open(io.BytesIO(img))
@@ -102,6 +113,7 @@ for iteration in range(1, NUM_IMAGES):
 
     image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
+    # identify faces in the frame captured
     people = recognizer.predict(image_gray)
     print(people)
 

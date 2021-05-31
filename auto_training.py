@@ -1,6 +1,8 @@
 """
 Script auto_training.py
 -----------------------
+
+This script is used to perform a supervised training.
 """
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
@@ -20,8 +22,18 @@ import modules.ocv_face_processing as OFP
 """
 Parameters
 ----------
+Minimum size (in pixels) of a face to be detected.
+Margin (in pixels) around the detected faces.
+Camera model to use.
+Connector to the MySQL database.
+Number of images to take.
+Frequence between captures.
+Actual date.
 """
+# define the minimum size (in pixels) of a face to be detected
 FACE_MIN_SIZE = 30
+
+# define the margin (in pixels) around detected faces
 FACE_MARGIN = 25
 
 # define the conector to the mysql db

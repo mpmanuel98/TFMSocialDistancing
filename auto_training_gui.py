@@ -1,6 +1,9 @@
 """
-auto_training_gui.py
+Script auto_training_gui.py
 -----------------------
+
+This script is used to perform a supervised training using
+a graphical interface.
 """
 __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
@@ -26,7 +29,16 @@ import modules.ocv_face_processing as OFP
 """
 Parameters
 ----------
+Minimum size (in pixels) of a face to be detected.
+Margin (in pixels) around the detected faces.
+Connector to the MySQL database.
 """
+# define the minimum size (in pixels) of a face to be detected
+FACE_MIN_SIZE = 30
+
+# define the margin (in pixels) around detected faces
+FACE_MARGIN = 25
+
 # define the conector to the mysql db
 db_connector = mysql.connector.connect(
   host="localhost",
@@ -45,6 +57,16 @@ Classes
 class dialog_GUI(QDialog):
 
     def __init__(self, img_name, img_index, parent=None):
+        """Initialize the dialog_GUI class.
+
+        Parameters
+        ----------
+        img_name : string
+            Name of the image to process.
+        img_index : int
+            Index of the image to process.
+        parent : None
+        """
         super().__init__(parent)
         # Load the dialog's GUI
         loadUi("gui/dialog.ui", self)
@@ -75,10 +97,16 @@ class dialog_GUI(QDialog):
         self.button_delete.clicked.connect(self.delete_image)
 
     def select_image(self):
+        """Move the temp image to the directory of
+        the person already registered.
+        """
         shutil.move("training_images/cropped_temp_faces/" + self.image_name, "training_images/" + self.combo_user.currentData() + "/" + self.image_name)
         self.close()
 
     def new_image(self):
+        """Move the temp image to a new directory of
+        the person to register.
+        """
         new_name = self.input_username.text()
         new_id = self.input_userid.text()
 
@@ -102,6 +130,8 @@ class dialog_GUI(QDialog):
         self.close()
 
     def delete_image(self):
+        """Delete the temp image.
+        """
         os.remove("training_images/cropped_temp_faces/" + self.image_name)
         self.close()
 
@@ -111,6 +141,8 @@ class main_GUI(QMainWindow):
     CAMERA = "hikvision"
 
     def __init__(self):
+        """Initialize the main_GUI class.
+        """
         super().__init__()
         uic.loadUi("gui/main.ui", self)
 
@@ -122,12 +154,19 @@ class main_GUI(QMainWindow):
         self.radio_hikvision.clicked.connect(self.select_hikvision)
 
     def select_hikvision(self):
+        """Select the Hikvision camera model.
+        """
         self.CAMERA = "hikvision"
 
     def select_foscam(self):
+        """Select the Foscam camera model.
+        """
         self.CAMERA = "foscam"
 
     def capture_images(self):
+        """Sub-process to capture images from
+        the IP camera.
+        """
         if not os.path.exists("training_images/cropped_temp_faces"):
             os.makedirs("training_images/cropped_temp_faces")
 
@@ -136,9 +175,6 @@ class main_GUI(QMainWindow):
 
         num_images = int(self.spin_num_capturas.value())
         frequence = (float(self.spin_tiempo.value()) * 60) / (num_images)
-
-        print(num_images)
-        print(frequence)
 
         face_id = 0
         for iteration in range(0, num_images):
@@ -154,11 +190,8 @@ class main_GUI(QMainWindow):
             else:
                 exit()
 
-            imageRGB = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-            pil_img = Image.fromarray(imageRGB)
-
             # detect faces in the capture taken
-            faces = OFP.detect_faces(image, 150)
+            faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
             if faces is None:
                 continue
@@ -166,10 +199,16 @@ class main_GUI(QMainWindow):
             # save the cropped face in a temporary directory
             for face in faces:
                 x, y, w, h = face
-                pil_img = pil_img.crop((x, y, x+w, y+h))
-                pil_img.save("training_images/cropped_temp_faces/image_" + str(face_id) + ".png")
+                        
+                #cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 1)
+                face_cropped = image[(y - FACE_MARGIN):(y + h + FACE_MARGIN), (x - FACE_MARGIN):(x + w + FACE_MARGIN)]
+                cv2.imwrite("training_images/cropped_temp_faces/image_" + str(face_id) + ".png", face_cropped)
+                
                 face_id += 1
             
+            cv2.imwrite("test.png", image)
+            cv2.waitKey(0)
+
             print("Captures taken and saved!")
             time.sleep(frequence)
 
@@ -177,9 +216,12 @@ class main_GUI(QMainWindow):
         print("General face detection process finished.")
 
     def classify_images(self):
+        """Sub-process to classify the captures taken.
+        """
         print("Starting the classification process...")
         self.estado_clasificacion.setText("Estado: En proceso...")
 
+        # for each image taken, opens a dialog to classify it
         img_index = 1
         for image_name in os.listdir("training_images/cropped_temp_faces"):
             dlg = dialog_GUI(image_name, img_index)
