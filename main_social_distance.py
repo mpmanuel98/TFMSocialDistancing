@@ -11,6 +11,7 @@ __author__ = "Manuel Marín Peral"
 
 import argparse
 import io
+import os
 import time
 from datetime import datetime
 
@@ -36,6 +37,7 @@ Number of images to take.
 Frequence between captures.
 Actual date.
 Code of the subject.
+Recognition algorithm to use.
 """
 # define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
@@ -77,6 +79,9 @@ db_connector = mysql.connector.connect(
 
 db_cursor = db_connector.cursor(buffered=True)
 
+# define the recognition algorithm to use (eigenfaces | fisherfaces | lboh | CNN)
+REC_ALGORITHM = "CNN"
+
 # define the total number of images to take
 NUM_IMAGES = 20
 
@@ -99,9 +104,15 @@ Script
 """
 print("Starting pre-processing...")
 
-# create the recognition structures and initialize the recognizer
-faces, labels, subject_names = OFP.create_recognition_structures("training_images")
-recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
+if(REC_ALGORITHM == "CNN"):
+    if not os.path.exists("training_images/encodings.pickle"):
+        OFP.create_encodings_cnn("training_images")
+
+    recognizer = OFP.Recognizer_CNN()
+else:
+    # create the recognition structures and initialize the recognizer
+    faces, labels, subject_names = OFP.create_recognition_structures("training_images")
+    recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
 print("Pre-processing finished!")
 
@@ -131,15 +142,19 @@ for iteration in range(1, NUM_IMAGES):
         x, y, w, h = face
         
         face_cropped = image[(y - FACE_MARGIN):(y + h + FACE_MARGIN), (x - FACE_MARGIN):(x + w + FACE_MARGIN)]
-        person = recognizer.identify_single_face(face_cropped)
-        print(person)
+
         # compute and store the centroids of the faces detected
         centroid = (int((x+(x+w))/2), int((y+(y+h))/2))
         centroids.append(centroid)
 
-        # save the correspondence between the centroid and the person
-        if(person[1] < 2000):
-            centroids_ids[person[0]] = centroid
+        if(REC_ALGORITHM == "CNN"):
+            person = recognizer.predict(face_cropped)
+            if(person and ((person[0])[1] >= 0.75)):
+                centroids_ids[(person[0])[0]] = centroid
+        else:
+            person = recognizer.identify_single_face(face_cropped)
+            if(person and (person[1] >= 2000.0)):
+                centroids_ids[person[0]] = centroid
 
         # plot the centroid and the rectangle arround the faces
         cv2.circle(image, centroid, radius=0, color=(0, 255, 0), thickness=3)

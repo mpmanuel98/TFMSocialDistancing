@@ -97,13 +97,11 @@ if(db_cursor.rowcount == 0):
 print("Starting pre-processing...")
 
 if(REC_ALGORITHM == "CNN"):
-    confidence = 2000.0
     if not os.path.exists("training_images/encodings.pickle"):
         OFP.create_encodings_cnn("training_images")
 
     recognizer = OFP.Recognizer_CNN()
 else:
-    confidence = 2000.0
     # create the recognition structures and initialize the recognizer
     faces, labels, subject_names = OFP.create_recognition_structures("training_images")
     recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
@@ -124,17 +122,20 @@ for iteration in range(1, NUM_IMAGES):
     else:
         exit()
 
-    image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-
     # identify faces in the frame captured
-    people = recognizer.predict(image_gray)
+    if(REC_ALGORITHM == "CNN"):
+        people = recognizer.predict(image)
+    else:
+        image_gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        people = recognizer.predict(image_gray)
+        
     print(people)
 
     if people is None:
         print("No people detected.")
     else:
         for person in people:
-            if(person[1] < confidence):
+            if((person[1] < 2000.0 and REC_ALGORITHM != "CNN") or (person[1] >= 0.75 and REC_ALGORITHM == "CNN")):
                 print(person[0], "recognized.")
 
                 # insert the person in the db

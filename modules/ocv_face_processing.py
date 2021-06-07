@@ -130,7 +130,7 @@ def create_recognition_structures(training_images_path):
     directories = os.listdir(training_images_path)
 
     for dir_name in directories:
-        if(dir_name == "cropped_temp_faces" or dir_name == "backup"):
+        if(dir_name == "cropped_temp_faces" or dir_name == "backup" or dir_name == "encodings.pickle"):
             continue
         
         subject_names[subject_index] = dir_name
@@ -390,6 +390,13 @@ class Recognizer_CNN:
         print("Obteniendo coordenadas de la cara...")
         boxes = face_recognition.face_locations(img)
 
+        """
+        # show the capture taken to the user
+        cv2.rectangle(img, ((boxes[0])[3], (boxes[0])[0]), ((boxes[0])[1], (boxes[0])[2]), (0, 255, 0), 5)
+        cv2.imwrite("Test.png", img)
+        cv2.waitKey(0)
+        """
+
         if(boxes is None):
             return None
 
@@ -429,10 +436,9 @@ class Recognizer_CNN:
 
                 person = []
                 person.append(name)
-                person.append(max(counts))
+                person.append(counts[name])
 
             # Actualiza la lista de nombres
             people_identified.append(person)
 
-        print(people_identified)
         return people_identified
