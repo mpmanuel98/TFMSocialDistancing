@@ -9,6 +9,7 @@ __author__ = "Manuel Marín Peral"
 
 import argparse
 import io
+import os
 import time
 from datetime import datetime
 
@@ -30,6 +31,7 @@ Frequence between captures.
 Actual date.
 Name of the subject.
 Code of the subject.
+Recognition algorithm to use.
 """
 parser = argparse.ArgumentParser(description="Subject.", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("-n", "--subject_name", help="The name of the subject.", type=str, default="Cloud Computing")
@@ -48,6 +50,9 @@ db_connector = mysql.connector.connect(
 )
 
 db_cursor = db_connector.cursor(buffered=True)
+
+# define the recognition algorithm to use (eigenfaces | fisherfaces | lboh | CNN)
+REC_ALGORITHM = "CNN"
 
 # define the camera to use (hikvision | foscam)
 CAMERA = "hikvision"
@@ -91,9 +96,17 @@ if(db_cursor.rowcount == 0):
 
 print("Starting pre-processing...")
 
-# create the recognition structures and initialize the recognizer
-faces, labels, subject_names = OFP.create_recognition_structures("training_images")
-recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
+if(REC_ALGORITHM == "CNN"):
+    confidence = 2000.0
+    if not os.path.exists("training_images/encodings.pickle"):
+        OFP.create_encodings_cnn("training_images")
+
+    recognizer = OFP.Recognizer_CNN()
+else:
+    confidence = 2000.0
+    # create the recognition structures and initialize the recognizer
+    faces, labels, subject_names = OFP.create_recognition_structures("training_images")
+    recognizer = OFP.Recognizer("fisherfaces", faces, labels, subject_names)
 
 print("Pre-processing finished!")
 
@@ -121,7 +134,7 @@ for iteration in range(1, NUM_IMAGES):
         print("No people detected.")
     else:
         for person in people:
-            if(person[1] < 2000.0):
+            if(person[1] < confidence):
                 print(person[0], "recognized.")
 
                 # insert the person in the db

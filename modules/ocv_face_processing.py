@@ -3,9 +3,9 @@ Module ocv_face_processing.py.
 
 In this module there are some definitions ir order to detect faces and
 to create the necessary structures to make the subsequent face
-recognition. Also, there is a Class to create Recognizer instances using
+recognition. Also, there is a Class to create Recognizer and Recognizer_CNN instances using
 a specified algorithm. For all the face processes OpenCV algorithms
-are used.
+are used and CNNs.
 
 Also some functions are defined:
     detect_frontal_faces(img)
@@ -16,7 +16,12 @@ __version__ = "1.0"
 __author__ = "Manuel Marín Peral"
 
 import os
+import pickle
+from collections import Counter
+
 import cv2
+import dlib
+import face_recognition
 import numpy as np
 
 """
@@ -25,6 +30,7 @@ Parameters
 """
 FACE_CROP_SIZE = 100
 FACE_MIN_SIZE = 30
+ENCODIGNS_PATH = "training_images/encodings.pickle"
 
 """
 Definitions (functions)
@@ -90,7 +96,7 @@ def detect_faces(image, min_size):
             faces_aux.append([x, y, w, h])
 
     faces_aux.extend(faces_aux)
-    faces_detected, weights = cv2.groupRectangles(np.array(faces_aux).tolist(), 1, 0.50)
+    faces_detected,_ = cv2.groupRectangles(np.array(faces_aux).tolist(), 1, 0.50)
 
     return faces_detected
  
@@ -158,6 +164,51 @@ def create_recognition_structures(training_images_path):
 
     return faces, labels, subject_names
 
+def create_encodings_cnn(training_images_path):
+
+    # Lista el directorio de las imagenes de cada persona
+    print("Listando directorio...")
+    directories = os.listdir(training_images_path)
+
+    known_Encodings = []
+    known_Names = []
+    i = 0
+    for dir_name in directories:
+        if(dir_name == "cropped_temp_faces" or dir_name == "backup"):
+            continue
+
+        subject_dir_path = training_images_path + "/" + dir_name
+        subject_images_names = os.listdir(subject_dir_path)
+        print(subject_images_names)
+
+        for image_name in subject_images_names:
+
+            # Extrae el dni de la persona del nombre del directorio
+            print("Procesando la imagen {}".format(i + 1))
+
+            # Abre la imagen
+            image = face_recognition.load_image_file(training_images_path + "/" + dir_name + "/" + image_name)
+
+            # Obtiene las coordenadas que delimitan cada cara en la imagen
+            boxes = face_recognition.face_locations(image)
+
+            print("Caras detectadas: " + str(len(boxes)))
+
+            # Obtiene los encodings para cada cara delimitada
+            encodings = face_recognition.face_encodings(image, boxes)
+
+            for encoding in encodings:
+                # Añade cada encoding generado junto con el nombre de la persona asociada
+                known_Encodings.append(encoding)
+                known_Names.append(dir_name)
+
+    # Guarda en disco los encodings serializados con sus correspondientes nombres
+    print("Serializando encodings...")
+    data = {"encodings": known_Encodings, "names": known_Names}
+    f = open(ENCODIGNS_PATH, "wb")
+    f.write(pickle.dumps(data))
+    f.close()
+
 """
 Classes
 ----------
@@ -220,7 +271,7 @@ class Recognizer:
         else:
             self.recognizer = cv2.face.LBPHFaceRecognizer_create(radius=1, neighbors=8, grid_x=8, grid_y=8)
             
-        self.recognizer.train(faces, np.array(labels))
+        self.recognizer.train(faces, np.array(labels))                      
 
     def identify_single_face(self, image):
         """Identify a face in a given cropped image.
@@ -286,4 +337,102 @@ class Recognizer:
 
             people_identified.append(person)
 
+        return people_identified
+
+class Recognizer_CNN:
+    """
+    A class used to represent a face recognizer using CNNs.
+
+    Methods
+    -------
+    __init__()
+        Initialize an instance of the class.
+    predict(img)
+        Tries to recognize a person in the given image.
+    """
+
+    def __init__(self):
+        """
+        Parameters
+        ----------
+        recognizer : string
+            The face recognizer that is going to be used, expected CNN.
+        """
+            
+        dlib.DLIB_USE_CUDA = True
+        dlib.USE_AVX_INSTRUCTIONS = True
+
+        # Carga los encodings con sus correspondientes nombres
+        print("Cargando encodings de caras conocidas...")
+        self.data = pickle.loads(open(ENCODIGNS_PATH, "rb").read())
+
+    def predict(self, img):
+        """Tries to recognize a person in the given image with a CNN.
+
+        Parameters
+        ----------
+        img : Jpeg image data
+            Data corresponding to the image where faces are being
+            recognized.
+
+        Returns
+        -------
+        list
+            List with the name and the confidence of the people
+            recognized.
+        """
+        
+        # Obtiene el numero de encodings que tiene cada cara conocida
+        name_counter = Counter(self.data['names'])
+
+        # Obtiene las coordenadas que delimitan cada cara en el frame capturado
+        # Obtiene los encodings para cada cara delimitada
+        print("Obteniendo coordenadas de la cara...")
+        boxes = face_recognition.face_locations(img)
+
+        if(boxes is None):
+            return None
+
+        print("Obteniendo encondigns de la cara...")
+        encodings = face_recognition.face_encodings(img, boxes)
+        print("Terminado!")
+
+        people_identified = []
+        
+        for encoding in encodings:
+            # Relaciona el encoding de cada cara conocida con el encoding generado para cada cada capturada
+            matches = face_recognition.compare_faces(self.data["encodings"], encoding)
+
+            name = "Desconocido"
+
+            # Comprobamos si existe alguna coincidencia
+            if True in matches:
+                # Guarda el indice de cada una de las caras conocidas que hayan tenido una coincidencia
+                matchedIds = []
+                for (index, boolean_value) in enumerate(matches):
+                    if(boolean_value):
+                        matchedIds.append(index)
+
+                counts = {}
+
+                # Itera por los indices con coincidencia y lleva la cuenta con cada cara reconocida
+                for i in matchedIds:
+                    name = self.data["names"][i]
+                    counts[name] = counts.get(name, 0) + 1
+
+                # Itera por los nombres identificados y calcula la confianza para cada cara reconocida
+                for name in counts:
+                    counts[name] = counts.get(name, 0) / name_counter[name]
+
+                # Se queda con el nombre con mayor confianza
+                name = max(counts, key=counts.get)
+
+                person = []
+                person.append(name)
+                person.append(max(counts))
+
+            # Actualiza la lista de nombres
+            people_identified.append(person)
+
+        print(people_identified)
         return people_identified
