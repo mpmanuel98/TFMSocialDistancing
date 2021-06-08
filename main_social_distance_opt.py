@@ -64,10 +64,10 @@ elif(CAMERA == "hikvision"):
     FACE_MARGIN = 25
 
     # define the minimum safe distance (in cms) that two people can be from each other
-    MIN_DISTANCE = 150
+    MIN_DISTANCE = 500
 
     # define the relation between pixels and cms (pixels, cms)
-    RELATION = (36, 3)
+    RELATION = (24, 4.2)
 
     # define the minimum size in pixels that a face size must be
     FACE_MIN_SIZE = 30
@@ -138,6 +138,8 @@ for iteration in range(1, 10):
     else:
         exit()
 
+    cv2.imwrite("original_v2_" + str(iteration) + ".png", image)
+
     # detect faces in the frame captured
     faces = OFP.detect_faces(image, FACE_MIN_SIZE)
 
@@ -186,7 +188,11 @@ for iteration in range(1, 10):
                 continue
 
             dist_diff = abs(distances[i] - distances[j])
+            print("Distancia en cuanto a profundidad " + str(dist_diff))
+
             dist_ij = dist_comp[i, j] * RELATION[1] / RELATION[0]
+            print("Distancia en el mismo plano " + str(dist_ij))
+
             # dist_final = np.sqrt(pow(dist_diff, 2) + pow(dist_ij, 2))
             dist_final = dist_diff + dist_ij
 
@@ -237,8 +243,10 @@ for iteration in range(1, 10):
     text = "Violaciones de la Distancia de Seguridad: " + str(num_violations / 2)
     cv2.putText(image, text, (10, image.shape[0] - 25), cv2.FONT_HERSHEY_COMPLEX, 0.55, (255, 255, 255), 2)
 
-    name = "iteracion_" + str(iteration) + ".png"
-    cv2.imwrite(name, image)
+    # only save captures with violations of safety distance
+    if(num_violations != 0):
+        name = "procesado_v2_" + str(iteration) + ".png"
+        cv2.imwrite(name, image)
 
     # wait some time (frequence)
     time.sleep(FREQUENCE)

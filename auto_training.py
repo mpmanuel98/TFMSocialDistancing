@@ -51,10 +51,10 @@ db_cursor = db_connector.cursor(buffered=True)
 CAMERA = "hikvision"
 
 # define the total number of images to take
-NUM_IMAGES = 10
+NUM_IMAGES = 2
 
 # define the refresh time (in seconds) between images taken
-FREQUENCE = 20 / (NUM_IMAGES)
+FREQUENCE = 2 / (NUM_IMAGES)
 
 """
 Script
@@ -128,7 +128,6 @@ for image_name in os.listdir("training_images/cropped_temp_faces"):
         db_cursor.execute(sql, values)
         myresult = db_cursor.fetchone()
         
-        print(str(index) + " -> " + myresult[0])
         people_indexes[index] = people_dirs
 
         index += 1
