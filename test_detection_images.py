@@ -4,11 +4,11 @@ import numpy as np
 from PIL import Image
 
 
-pil_image = Image.open("mask3.jpg")
+pil_image = Image.open("mask5.jpg")
 image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
 
 
-faces = OFP.detect_faces(image, 30)
+faces = OFP.detect_faces(image, 1)
 
 if faces is None:
     exit()
