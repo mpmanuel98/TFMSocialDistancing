@@ -64,7 +64,7 @@ elif(CAMERA == "hikvision"):
     FACE_MARGIN = 25
 
     # define the minimum safe distance (in cms) that two people can be from each other
-    MIN_DISTANCE = 500
+    MIN_DISTANCE = 150
 
     # define the relation between pixels and cms (pixels, cms)
     RELATION = (24, 4.2)
