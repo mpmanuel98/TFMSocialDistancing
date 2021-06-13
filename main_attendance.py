@@ -122,6 +122,8 @@ for iteration in range(1, NUM_IMAGES):
     else:
         exit()
 
+    cv2.imwrite("original_attendance_" + str(iteration) + ".png", image)
+
     # identify faces in the frame captured
     if(REC_ALGORITHM == "CNN"):
         people = recognizer.predict(image)
